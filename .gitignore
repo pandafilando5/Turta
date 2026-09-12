@@ -1,0 +1,26 @@
+# ── Müvekkil verisi ASLA depoya girmemeli (Av. K. m.36 — meslek sırrı) ──
+# Uygulamanın verisi telefonda durur; bu dosyalar yanlışlıkla commit'lenmesin.
+*arsiv*.html
+Turta_arsiv_*.html
+turta_yedek_*.json
+*yedek*.json
+hearings*.json
+data/
+Telefon/
+duruşmalsitesi/
+*.xlsx
+*.xls
+*.csv
+*.ics
+
+# Araç artıkları
+node_modules/
+.DS_Store
+Thumbs.db
+
+# Kaynak değerlendirme raporları — gerçek esas no / taraf adı örnekleri içeriyor.
+# Gerekçe: degerlendirme/OKUBENI.md
+DEGERLENDIRME_VE_YENILIK_RAPORU.md
+*urun-degerlendirmesi.md
+degerlendirme/DEGERLENDIRME_VE_YENILIK_RAPORU.md
+degerlendirme/*urun-degerlendirmesi.md
