@@ -1,0 +1,37 @@
+{
+  "name": "Turta — Duruşma Takip",
+  "short_name": "Turta",
+  "description": "Duruşma, dosya ve takvim takibi. Çevrimdışı çalışır.",
+  "lang": "tr",
+  "dir": "ltr",
+  "start_url": "./",
+  "scope": "./",
+  "id": "/Turta/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "background_color": "#faf6f0",
+  "theme_color": "#654321",
+  "categories": ["productivity", "business", "utilities"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    {
+      "name": "Yeni Duruşma",
+      "short_name": "Yeni",
+      "description": "Hızlı duruşma kaydı ekle",
+      "url": "./?a=new",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Bugün",
+      "short_name": "Bugün",
+      "description": "Bugünkü duruşmalar",
+      "url": "./?a=today",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}
