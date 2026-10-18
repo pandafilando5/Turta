@@ -138,6 +138,7 @@ button{cursor:pointer;border:none;background:none;padding:0}
   background:var(--info);color:#fff;
 }
 .banner.warn{background:var(--warning)}
+.banner.bad{background:var(--danger)}
 .banner button{
   margin-left:auto;background:rgba(255,255,255,.25);color:#fff;
   padding:6px 12px;border-radius:999px;font-size:12px;font-weight:700;
@@ -739,7 +740,7 @@ textarea.inp{resize:vertical;min-height:64px;line-height:1.5}
    Tek dosya, bağımlılıksız, çevrimdışı çalışan PWA.
    ════════════════════════════════════════════════════════════ */
 
-const APP_VERSION = '9.0.0';
+const APP_VERSION = '9.1.0';
 
 /* HTML dışa aktarımı bu diziyi doldurur (aşağıdaki downloadHTML). */
 const EMBEDDED_DATA = [];
@@ -785,6 +786,10 @@ const DEFAULT_SETTINGS = {
   notifications:false,
   autoBackup:true,
   lastBackupDate:null,
+  backupEveryDays:7,        // kaç günde bir yedek istensin
+  changesSinceBackup:0,     // son yedekten beri yapılan değişiklik
+  backupSnoozeUntil:null,   // "yarın hatırlat"
+  warnSeen:false,           // veri silinme uyarısı gösterildi mi
   lastSegment:'today',
   adliTatil:{ on:true, start:'07-20', end:'08-31' },
   offDays:[],          // ['2026-03-20', ...] kullanıcının eklediği tatiller
@@ -1164,6 +1169,9 @@ function pushUndo(op){
   S.undo.push(op);
   if (S.undo.length>40) S.undo.shift();
   lsSet(K.undo, S.undo);
+  // Yedeksiz biriken değişiklikleri say
+  S.settings.changesSinceBackup = (S.settings.changesSinceBackup||0) + 1;
+  saveSettings();
 }
 function doUndo(){
   const op = S.undo.pop();
@@ -1400,12 +1408,15 @@ function renderBanners(){
   if (!S.storageOk) {
     html += `<div class="banner warn">⚠️ Veri cihaza yazılamıyor<button data-act="backup:json">Yedek al</button></div>`;
   }
-  if (S.settings.autoBackup) {
-    const last = S.settings.lastBackupDate;
-    const gap = last ? dayDiff(todayISO(), last) : 999;
-    if (gap>=14 && S.hearings.length) {
-      html += `<div class="banner warn">💾 ${last?`Son yedek ${gap} gün önce`:'Henüz yedek almadınız'}<button data-act="backup:json">Yedekle</button></div>`;
-    }
+  // Yedek şeridi — "hiç yedek yok" durumu kapatılamaz, kaybolmaz.
+  const due = backupDue();
+  if (due && (S.settings.autoBackup || due.kind==='never')) {
+    const bad = due.kind==='never';
+    const txt = bad ? 'Hiç yedek yok — veriniz yalnızca bu telefonda'
+      : due.kind==='days' ? `Son yedek ${due.n} gün önce`
+      : `${due.n} değişiklik yedeklenmedi`;
+    html += `<div class="banner ${bad?'bad':'warn'}">💾 ${txt}
+      <button data-act="backup:prompt">Yedekle</button></div>`;
   }
   b.innerHTML = html;
 }
@@ -1761,6 +1772,7 @@ function renderSettings(){
   const swOn = 'serviceWorker' in navigator && !!navigator.serviceWorker.controller;
   const notif = ('Notification' in window) ? Notification.permission : 'yok';
   const gap = st.lastBackupDate ? dayDiff(todayISO(), st.lastBackupDate) : null;
+  const chg = st.changesSinceBackup || 0;
 
   $('#settings').innerHTML = `
     <div class="sect">
@@ -1807,18 +1819,32 @@ function renderSettings(){
         <div class="item-l">Açılış Kilidi (PIN)</div>
         <div class="item-d">${st.pin?'Açık — uygulama açılışta PIN sorar':'Kapalı'}</div></div>
         <div class="toggle${st.pin?' on':''}"></div></button>
+      <button class="item" data-act="warn:show"><div class="item-main">
+        <div class="item-l">Veri Nerede Duruyor?</div>
+        <div class="item-d">Verinin saklandığı yer ve neyin sildiği</div></div><span class="item-v">ℹ️</span></button>
     </div>
 
     <div class="sect">
       <div class="sect-t">💾 Veri Güvenliği</div>
+      <div class="note bad">⚠️ Chrome'da <b>“Gezinme verilerini temizle → Çerezler ve site
+        verileri”</b> dediğinizde bu uygulamanın <b>tüm verisi silinir</b> — cihaz içi kalıcı
+        yedek dahil — ve geri getirilemez. Uygulamayı kaldırmak da aynı sonucu verir.
+        Tek koruma, tarayıcının dışında duran bir yedek dosyasıdır.</div>
       ${gap===null
-        ? `<div class="note warn">Henüz yedek alınmadı. Verileriniz yalnızca bu cihazda.</div>`
-        : gap>=14 ? `<div class="note warn">⚠️ Son yedek ${gap} gün önce.</div>`
-                  : `<div class="note ok">✅ Son yedek: ${esc(fmtNum(st.lastBackupDate))} (${gap} gün önce)</div>`}
-      <button class="item" data-act="backup:json"><div class="item-main">
-        <div class="item-l">Yedek Al (JSON)</div><div class="item-d">Cihaza indirir</div></div><span class="item-v">⬇️</span></button>
+        ? `<div class="note warn">Henüz hiç yedek alınmadı.</div>`
+        : gap>=(st.backupEveryDays||7) ? `<div class="note warn">⚠️ Son yedek ${gap} gün önce${chg?` · ${chg} değişiklik yedeklenmedi`:''}</div>`
+                  : `<div class="note ok">✅ Son yedek: ${esc(fmtNum(st.lastBackupDate))} (${gap} gün önce)${chg?` · ${chg} yeni değişiklik`:''}</div>`}
       <button class="item" data-act="backup:share"><div class="item-main">
-        <div class="item-l">Yedeği Paylaş</div><div class="item-d">Drive, WhatsApp, e-posta…</div></div><span class="item-v">📤</span></button>
+        <div class="item-l">📤 Yedeği Paylaş <b style="color:var(--success)">(önerilen)</b></div>
+        <div class="item-d">Drive, WhatsApp, e-posta — telefon dışında durur</div></div><span class="item-v">📤</span></button>
+      <button class="item" data-act="backup:json"><div class="item-main">
+        <div class="item-l">Yedek Al (JSON)</div>
+        <div class="item-d">İndirilenler klasörüne kaydeder. Chrome temizliği indirilmiş
+          dosyaları silmez, ama telefon kaybolursa yedek de gider.</div></div><span class="item-v">⬇️</span></button>
+      <button class="item" data-act="backup:every"><div class="item-main">
+        <div class="item-l">Hatırlatma Sıklığı</div>
+        <div class="item-d">Ya da 20 değişiklikte bir</div></div>
+        <div class="item-v">${st.backupEveryDays||7} günde bir</div></button>
       <button class="item" data-act="bulk"><div class="item-main">
         <div class="item-l">📋 Toplu Ekle (yapıştır)</div>
         <div class="item-d">Excel/UYAP satırlarını yapıştırın — bilgisayara gerek yok</div></div><span class="item-v">⚡</span></button>
@@ -1831,7 +1857,9 @@ function renderSettings(){
       <button class="item" data-act="html:export"><div class="item-main">
         <div class="item-l">Veri Gömülü HTML İndir</div><div class="item-d">Tek dosyalık arşiv — çift tıkla açılır</div></div><span class="item-v">🌐</span></button>
       <button class="item" data-act="autobackup"><div class="item-main">
-        <div class="item-l">Yedek Hatırlatması</div><div class="item-d">14 günde bir uyarır</div></div>
+        <div class="item-l">Yedek Hatırlatması</div>
+        <div class="item-d">Açılışta yedek zamanı geldiyse sorar. Hiç yedek yoksa uyarı
+          şeridi bu ayardan bağımsız olarak kalır.</div></div>
         <div class="toggle${st.autoBackup?' on':''}"></div></button>
     </div>
 
@@ -2492,8 +2520,92 @@ function backupPayload(){
 }
 function markBackup(){
   S.settings.lastBackupDate = todayISO();
+  S.settings.changesSinceBackup = 0;
+  S.settings.backupSnoozeUntil = null;
   saveSettings(); renderBanners();
   if (S.page==='settings') renderSettings();
+}
+
+/* ── Yedek zamanlaması ──
+   Tarayıcıdaki hiçbir depolama "site verilerini temizle"den kurtulmaz.
+   Tek gerçek koruma, tarayıcının DIŞINDA duran bir dosyadır. Bu yüzden
+   uyarı kolay görmezden gelinemeyecek kadar ısrarcı.                       */
+function backupDue(){
+  if (!S.hearings.length) return null;
+  const st = S.settings;
+  if (!st.lastBackupDate) return {kind:'never'};
+  const gap = dayDiff(todayISO(), st.lastBackupDate);
+  if (gap >= (st.backupEveryDays||7)) return {kind:'days', n:gap};
+  if ((st.changesSinceBackup||0) >= 20) return {kind:'changes', n:st.changesSinceBackup};
+  return null;
+}
+/** Açılışta panel çıkarılsın mı — "yarın hatırlat" buna işler, şeride işlemez. */
+function shouldPromptBackup(){
+  const d = backupDue();
+  if (!d) return null;
+  const sn = S.settings.backupSnoozeUntil;
+  if (sn && sn > todayISO()) return null;
+  return d;
+}
+
+function openBackupPrompt(d){
+  const msg = d.kind==='never'
+    ? 'Henüz <b>hiç yedek almadınız</b>. Kayıtlarınız yalnızca bu telefonda duruyor.'
+    : d.kind==='days'
+      ? `Son yedeğinizin üzerinden <b>${d.n} gün</b> geçti.`
+      : `Son yedekten bu yana <b>${d.n} değişiklik</b> yaptınız.`;
+
+  openSheet(
+    sheetHead('💾 Yedek Zamanı', `${S.hearings.length} duruşma kaydı`) +
+    `<div class="sheet-body">
+      <div class="hint warn">${msg}</div>
+      <div class="hint bad">⚠️ Chrome'da <b>“Gezinme verilerini temizle”</b> yaparken
+        <b>“Çerezler ve site verileri”</b> kutusu işaretliyse, bu uygulamanın verisi de
+        silinir — cihaz içi kalıcı yedek dahil. Tarayıcının dışında bir kopya
+        tutmazsanız geri getirilemez.</div>
+      <div class="hint info">En güvenlisi <b>Drive'a göndermek</b>: telefon kaybolsa,
+        sıfırlansa veya Chrome temizlense bile dosya yerinde kalır.</div>
+    </div>
+    <div class="sheet-foot">
+      <button class="btn btn-ok" id="bk-share">📤 Drive'a / WhatsApp'a Gönder</button>
+      <button class="btn btn-2" id="bk-dl">⬇️ Telefona İndir</button>
+      <button class="btn btn-2" id="bk-later">Yarın hatırlat</button>
+    </div>`,
+  sh=>{
+    sh.querySelector('#bk-share').onclick = async ()=>{ closeSheet(); await backupShare(); };
+    sh.querySelector('#bk-dl').onclick    = ()=>{ closeSheet(); backupJSON(); };
+    sh.querySelector('#bk-later').onclick = ()=>{
+      S.settings.backupSnoozeUntil = addDays(todayISO(),1);
+      saveSettings(); closeSheet();
+      toast('Yarın tekrar hatırlatılacak', 3000);
+    };
+    return null;
+  });
+}
+
+/** İlk açılışta bir kez: verinin nerede durduğunu ve neyin sildiğini anlat. */
+function openFirstRunWarning(){
+  openSheet(
+    sheetHead('🔐 Verileriniz nerede duruyor?', 'Bir kez okuyun — önemli') +
+    `<div class="sheet-body">
+      <div class="hint ok">✅ Duruşma bilgileriniz <b>yalnızca bu telefonda</b> saklanır.
+        Hiçbir sunucuya gönderilmez, internete çıkmaz.</div>
+      <div class="hint bad">⚠️ Bunun bedeli şu: Chrome'da
+        <b>“Gezinme verilerini temizle → Çerezler ve site verileri”</b> dediğinizde
+        <b>uygulamanın tüm verisi silinir</b> ve geri getirilemez.
+        Uygulamayı kaldırmak veya telefonu sıfırlamak da aynı sonucu verir.</div>
+      <div class="hint info">💾 Tek koruma düzenli yedektir. Uygulama size haftada bir
+        hatırlatacak; <b>Drive'a gönderin</b>, telefonda tutmayın.</div>
+    </div>
+    <div class="sheet-foot">
+      <button class="btn btn-p" id="fw-ok">Anladım</button>
+    </div>`,
+  sh=>{
+    sh.querySelector('#fw-ok').onclick = ()=>{
+      S.settings.warnSeen = true; saveSettings(); closeSheet();
+    };
+    return null;
+  });
 }
 function backupJSON(){
   if (!S.hearings.length){ toast('Yedeklenecek kayıt yok'); return; }
@@ -2958,6 +3070,9 @@ const ACTIONS = {
   'autobackup': ()=>{ S.settings.autoBackup=!S.settings.autoBackup; saveSettings(); renderSettings(); renderBanners(); },
   'backup:json':  ()=>backupJSON(),
   'backup:share': ()=>backupShare(),
+  'backup:prompt':()=>openBackupPrompt(backupDue() || {kind:'days', n:0}),
+  'backup:every': ()=>openBackupEvery(),
+  'warn:show':    ()=>openFirstRunWarning(),
   'restore': ()=>doRestore(),
   'merge':   ()=>doMerge(),
   'idb:load':()=>loadFromIDB(),
@@ -2993,6 +3108,23 @@ const ACTIONS = {
     renderAll(); toast('Tüm kayıtlar silindi');
   }
 };
+
+function openBackupEvery(){
+  const opts=[3,7,14,30];
+  openSheet(sheetHead('Yedek Hatırlatma Sıklığı','Kaç günde bir sorulsun') +
+    `<div class="sheet-body">
+      <div class="hint info">Ayrıca son yedekten sonra <b>20 değişiklik</b> yaptığınızda
+        gün sayısını beklemeden hatırlatılır.</div>
+      ${opts.map(n=>`<button class="item" data-n="${n}" style="border-radius:10px;margin-bottom:6px;background:var(--bg)">
+        <div class="item-main"><div class="item-l">${n} günde bir</div></div>
+        <span class="item-v">${(S.settings.backupEveryDays||7)===n?'✓':''}</span></button>`).join('')}
+    </div><div class="sheet-foot"><button class="btn btn-2" data-act="sheet:close">Kapat</button></div>`,
+  sh=>{ sh.addEventListener('click', e=>{
+    const b=e.target.closest('[data-n]'); if(!b) return;
+    S.settings.backupEveryDays=+b.dataset.n; saveSettings();
+    closeSheet(); renderSettings(); renderBanners();
+  }); return null; });
+}
 
 function openReminder(){
   const opts=[15,30,60,120,1440];
@@ -3255,8 +3387,23 @@ function showLock(){
 function hideLock(){ const h=$('#lock'); if(h) h.hidden=true; }
 async function tryUnlock(){
   const v = $('#lock-in').value.trim();
-  if (await hashPin(v) === S.settings.pin){ hideLock(); $('#lock-msg').textContent=''; buzz(); }
+  if (await hashPin(v) === S.settings.pin){
+    hideLock(); $('#lock-msg').textContent=''; buzz();
+    setTimeout(maybePrompt, 500);
+  }
   else { $('#lock-msg').textContent='PIN yanlış'; $('#lock-in').value=''; buzz(60); }
+}
+
+/** Açılışta tek bir panel gösterir — ikisi birden üst üste binmesin. */
+let promptShown = false;
+function maybePrompt(){
+  if (promptShown) return;
+  if (!$('#sheet-host').hidden) return;      // kullanıcı zaten bir şey açmış
+  if (!S.hearings.length) return;            // boş uygulamada rahatsız etme
+  promptShown = true;
+  if (!S.settings.warnSeen) { openFirstRunWarning(); return; }
+  const d = shouldPromptBackup();
+  if (d) openBackupPrompt(d);
 }
 
 document.addEventListener('click', e=>{
@@ -3364,6 +3511,9 @@ function boot(){
   if (S.settings.pin) showLock();
   $('#lock-go').onclick = tryUnlock;
   $('#lock-in').addEventListener('keydown', e=>{ if(e.key==='Enter') tryUnlock(); });
+
+  // Açılış uyarıları: önce "veri nerede durur", sonra yedek zamanı
+  if (!S.settings.pin) setTimeout(maybePrompt, 700);
 
   // Gün değişince yeniden çiz (gece yarısını geçen oturumlar)
   let lastDay = todayISO();

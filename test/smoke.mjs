@@ -1,0 +1,227 @@
+/* ============================================================
+   Turta — otomatik doğrulama
+   Çalıştırmak için:
+       npm install playwright
+       node test/smoke.mjs
+   Gerçek Chromium'da, telefon boyutunda, tr-TR / Europe/Istanbul.
+   Değişiklik yaptıktan sonra bunu çalıştırın; hepsi geçmeden yayınlamayın.
+   ============================================================ */
+import { chromium } from 'playwright';
+import http from 'node:http';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const PORT = 8097;
+const MIME = {'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8',
+  '.webmanifest':'application/manifest+json','.png':'image/png','.json':'application/json'};
+
+const srv = http.createServer((req,res)=>{
+  let p = decodeURIComponent(req.url.split('?')[0]);
+  if (p === '/') p = '/index.html';
+  const f = path.join(ROOT, p);
+  if (!f.startsWith(ROOT) || !fs.existsSync(f) || fs.statSync(f).isDirectory()){ res.writeHead(404); return res.end('nf'); }
+  res.writeHead(200, {'Content-Type': MIME[path.extname(f)] || 'application/octet-stream',
+                      'Service-Worker-Allowed':'/'});
+  res.end(fs.readFileSync(f));
+});
+await new Promise(r=>srv.listen(PORT, r));
+const BASE = `http://localhost:${PORT}/`;
+
+const errors=[], ok=[], fail=[];
+const T = (name, cond, extra='') => (cond ? ok : fail).push(name + (extra?` — ${extra}`:''));
+
+// Chromium yolu: Playwright'ın kendi indirdiği, yoksa ortamdaki
+let exe;
+for (const c of ['/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
+                 '/opt/pw-browsers/chromium/chrome-linux/chrome']) if (fs.existsSync(c)) { exe = c; break; }
+
+const browser = await chromium.launch(exe ? {executablePath:exe, args:['--no-sandbox']} : {args:['--no-sandbox']});
+const ctx = await browser.newContext({ viewport:{width:412,height:915}, deviceScaleFactor:2,
+  isMobile:true, hasTouch:true, locale:'tr-TR', timezoneId:'Europe/Istanbul', acceptDownloads:true });
+const page = await ctx.newPage();
+page.on('console', m => { if (m.type()==='error') errors.push('CONSOLE: '+m.text()); });
+page.on('pageerror', e => errors.push('PAGEERROR: '+e.message));
+
+await page.goto(BASE, { waitUntil:'networkidle' });
+
+/* ─── 1. Açılış ve PWA ─── */
+T('Sayfa açıldı', await page.title() === 'Turta — Duruşma Takip', await page.title());
+T('Hoş geldin kartı', await page.locator('.welcome').isVisible());
+const sw = await page.evaluate(async()=>{ const r=await navigator.serviceWorker.getRegistration();
+  if(!r) return 'none'; await navigator.serviceWorker.ready; return r.active?'active':'pending'; });
+T('Service worker etkin', sw==='active', sw);
+for (const f of ['manifest.webmanifest','icons/icon-192.png','icons/icon-512.png',
+                 'icons/icon-maskable-512.png','sw.js']) {
+  const r = await page.request.get(BASE+f);
+  T('Erişilebilir: '+f, r.ok(), String(r.status()));
+}
+const mf = await (await page.request.get(BASE+'manifest.webmanifest')).json();
+T('Manifest standalone', mf.display==='standalone');
+T('Manifest 192+512 ikon içeriyor',
+  mf.icons.some(i=>i.sizes==='192x192') && mf.icons.some(i=>i.sizes==='512x512'));
+T('Maskable ikon var', mf.icons.some(i=>i.purpose==='maskable'));
+T('Sürümler eşleşiyor',
+  (await page.evaluate(()=>APP_VERSION)) === fs.readFileSync(path.join(ROOT,'sw.js'),'utf-8')
+    .match(/const VERSION = 'v([\d.]+)'/)[1],
+  'index.html APP_VERSION ile sw.js VERSION aynı olmalı');
+
+/* ─── 2. Tarih / dil yardımcıları ─── */
+const u = await page.evaluate(()=>({
+  fold:[fold('İstanbul'),fold('ŞİŞLİ'),fold('Ağır Ceza')],
+  relToday:relLabel(todayISO())[0], relTom:relLabel(addDays(todayISO(),1))[0],
+  clamp:addMonths('2026-01-31',1),
+  norm:[normDate('15.10.2026'),normDate('2026-10-15'),normDate('15/10/26')],
+  p1:smartParse('15.10.2026 - 10:30 - Bakırköy 5. Aile Mahkemesi - 2025/123 Esas'),
+  p2:smartParse('Duruşma Tarihi: 22/11/2026 Saat: 09:15\nMahkeme: Şanlıurfa 3. Asliye Ticaret Mahkemesi\nEsas No: 2026/456'),
+  p3:smartParse('2025/1447 E. 18 Kasım 2026 Perşembe 10:15 Şanlıurfa Asliye Ticaret Mahkemesi'),
+  bulk:bulkParse('15.10.2026 10:30 3. Asliye Hukuk Mahkemesi 2025/123 E.\nbaşlık satırı\n22.10.2026 09:00 5. Aile Mahkemesi 2026/45 E.')
+}));
+T('Türkçe katlama İ→i', u.fold[0]==='istanbul', u.fold[0]);
+T('Türkçe katlama Ş→s', u.fold[1]==='sisli', u.fold[1]);
+T('BUGÜN doğru (UTC kayması yok)', u.relToday==='BUGÜN', u.relToday);
+T('YARIN doğru', u.relTom==='YARIN', u.relTom);
+T('Ay ekleme taşmıyor', u.clamp==='2026-02-28', u.clamp);
+T('Tarih biçimleri', JSON.stringify(u.norm)==='["2026-10-15","2026-10-15","2026-10-15"]', JSON.stringify(u.norm));
+T('Ayrıştırma: tire ayrılmış', u.p1.date==='2026-10-15'&&u.p1.time==='10:30'&&u.p1.file==='2025/123 E.'
+  &&/Aile Mahkemesi/.test(u.p1.court||''), JSON.stringify(u.p1));
+T('Ayrıştırma: çok satırlı UYAP', u.p2.date==='2026-11-22'&&u.p2.time==='09:15'
+  &&/^2026\/456/.test(u.p2.file||''), JSON.stringify(u.p2));
+T('Ayrıştırma: Türkçe ay adı', u.p3.date==='2026-11-18'&&u.p3.time==='10:15', JSON.stringify(u.p3));
+T('Ayrıştırma: mahkeme adı tarihten temizlendi',
+  /^Şanlıurfa Asliye Ticaret Mahkemesi$/.test((u.p3.court||'').trim()), JSON.stringify(u.p3.court));
+T('Toplu ayrıştırma başlığı atlıyor', u.bulk.length===2, JSON.stringify(u.bulk.map(x=>x.date)));
+
+/* ─── 3. Veri ve render ─── */
+await page.evaluate(()=>{
+  const t=todayISO();
+  S.hearings=[
+    {id:'a1',date:t,time:'09:30',court:'Şanlıurfa 3. Asliye Hukuk Mahkemesi',file:'2025/11 E.',client:'Demir',type:'ana',status:'active',note:'Bilirkişi raporu'},
+    {id:'a2',date:t,time:'10:15',court:'Şanlıurfa 2. İş Mahkemesi',file:'2026/22 E.',client:'Aydın',type:'ek',status:'active'},
+    {id:'a3',date:addDays(t,1),time:'11:00',court:'Şanlıurfa 1. Aile Mahkemesi',file:'2026/33 E.',type:'ana',status:'active'},
+    {id:'a4',date:addDays(t,-40),time:'09:00',court:'Eski Mahkeme <script>x</script>',file:'2025/44 E.',client:"O'Brien & Co",type:'ana',status:'active'},
+    {id:'a5',date:addDays(t,20),time:'14:00',court:'Şanlıurfa Ağır Ceza',file:'2026/55 E.',type:'tev',status:'active'}
+  ].map(normalize);
+  S.settings.warnSeen=true;
+  // Yedek panelinin aşağıdaki bölümleri engellememesi için: bugün yedeklenmiş say.
+  // 11. bölüm bunu bilerek sıfırlayıp yedek akışını ayrıca test eder.
+  S.settings.lastBackupDate=todayISO(); S.settings.changesSinceBackup=0;
+  saveSettings(); persist({undoable:false}); renderAll();
+});
+await page.waitForTimeout(300);
+T('Bugün+yarın 3 satır', await page.locator('#agenda .hrow').count()===3);
+T('İşaret bekliyor kutusu çıktı', await page.locator('.stale').isVisible());
+T('XSS kaçışı çalışıyor',
+  await page.evaluate(()=>!document.querySelector('#agenda').innerHTML.includes('<script>x</script>')));
+
+/* ─── 4. Çakışma ─── */
+const cf = await page.evaluate(()=>({
+  same: (c=>c&&{gap:c.gap,cross:c.cross})(conflictFor(todayISO(),'09:45','ana','zz')),
+  cross:(c=>c&&{gap:c.gap,cross:c.cross})(conflictFor(todayISO(),'10:00','ek','a2')),
+  all: findConflicts().map(x=>({gap:x.gap,cross:x.cross}))
+}));
+T('Çakışma tespiti', !!cf.same, JSON.stringify(cf.same));
+T('Bina değişikliği ayırt ediliyor', cf.cross&&cf.cross.cross===true, JSON.stringify(cf.cross));
+T('Çapraz bina çakışması listeleniyor', cf.all.some(x=>x.cross), JSON.stringify(cf.all));
+
+/* ─── 5. Erteleme ─── */
+await page.locator('.hrow-in').first().click(); await page.waitForTimeout(250);
+T('Detay paneli açıldı', await page.locator('#sheet .acts').isVisible());
+await page.locator('#sheet [data-act="postpone"]').first().click(); await page.waitForTimeout(300);
+T('Ertele paneli açıldı', await page.locator('#p-q').isVisible());
+await page.locator('#p-q .pick').nth(5).click(); await page.waitForTimeout(150);
+await page.locator('#p-r .pick').first().click(); await page.waitForTimeout(100);
+T('Gerekçe cipi nota yazıyor', (await page.locator('#p-note').inputValue()).length>5);
+const nd = await page.locator('#p-date').inputValue();
+T('Ertelenen tarih iş günü', await page.evaluate(d=>!isOffDay(d), nd), nd);
+await page.locator('#p-save').click(); await page.waitForTimeout(350);
+const af = await page.evaluate(()=>({n:S.hearings.length, old:byId('a1').status,
+  chain:S.hearings.filter(h=>h.prevId==='a1').length, nr:S.hearings.find(h=>h.prevId==='a1')}));
+T('Erteleme yeni kayıt üretti', af.n===6, 'kayıt='+af.n);
+T('Eski kayıt ertelendi oldu', af.old==='postponed', af.old);
+T('Zincir bağı kuruldu', af.chain===1);
+T('Yeni kayıt dosya bilgisini taşıdı', af.nr&&af.nr.file==='2025/11 E.'&&af.nr.status==='active');
+await page.evaluate(()=>doUndo()); await page.waitForTimeout(200);
+T('Geri al ertelemeyi tersine çevirdi',
+  await page.evaluate(()=>S.hearings.length===5 && byId('a1').status==='active'));
+
+/* ─── 6. Kalıcılık ─── */
+await page.reload({waitUntil:'networkidle'}); await page.waitForTimeout(500);
+T('Veri yeniden yüklemede korundu', await page.evaluate(()=>S.hearings.length)===5);
+
+/* ─── 7. Sayfalar ─── */
+await page.locator('[data-seg="calendar"]').click(); await page.waitForTimeout(250);
+T('Takvim ızgarası', await page.locator('#calgrid .cell').count()>=28);
+await page.locator('[data-seg="week"]').click(); await page.waitForTimeout(250);
+T('14 günlük şerit', await page.locator('.strip .sd').count()===14);
+await page.locator('[data-nav="files"]').click(); await page.waitForTimeout(250);
+T('Dosyalar doldu', await page.locator('#files .fgroup').count()>=4);
+T('Dosyada sonraki duruşma görünüyor', await page.locator('#files .fg-next').count()>=1);
+await page.locator('[data-nav="stats"]').click(); await page.waitForTimeout(250);
+T('Özet doldu', await page.locator('#stats .scard').count()===6);
+await page.locator('[data-nav="settings"]').click(); await page.waitForTimeout(250);
+T('Ayarlar doldu', await page.locator('#settings .sect').count()>=8);
+T('Ayarlarda veri silinme uyarısı', (await page.locator('#settings').innerText()).includes('Çerezler ve site'));
+
+/* ─── 8. Arama ─── */
+await page.locator('[data-nav="agenda"]').click(); await page.waitForTimeout(150);
+await page.locator('[data-act="search:toggle"]').click();
+await page.locator('#q').fill('sanliurfa is'); await page.waitForTimeout(250);
+T('Aksansız Türkçe arama', await page.locator('#agenda .hrow').count()>=1);
+await page.locator('[data-act="search:close"]').click(); await page.waitForTimeout(150);
+
+/* ─── 9. Dışa aktarma ─── */
+const ics = await page.evaluate(()=>buildICS(S.hearings.slice(0,2)));
+T('ICS yapısı', ics.startsWith('BEGIN:VCALENDAR')&&ics.trim().endsWith('END:VCALENDAR'));
+T('ICS CRLF', ics.includes('\r\n') && !/[^\r]\n/.test(ics));
+T('ICS sabit UID (kopya değil güncelleme)', (ics.match(/UID:/g)||[]).length===2);
+T('ICS Istanbul saat dilimi', ics.includes('TZID:Europe/Istanbul'));
+const bk = await page.evaluate(()=>JSON.parse(backupPayload()));
+T('Yedek biçimi', bk.app==='Turta'&&Array.isArray(bk.hearings)&&bk.count===5);
+
+/* ─── 10. Türkçe alan adlarıyla içe aktarma ─── */
+const al = await page.evaluate(()=>normalize({mahkeme:'Şanlıurfa 1. Sulh Hukuk',dosyaNo:'2024/12 E.',
+  tarih:'05.03.2027',saat:'14.30',taraf:'Demir',bina:'Ek Bina',durum:'Ertelendi'}));
+T('Türkçe alan adları eşleniyor',
+  al.date==='2027-03-05'&&al.time==='14:30'&&al.type==='ek'&&al.status==='postponed'&&al.client==='Demir',
+  JSON.stringify({d:al.date,t:al.time,ty:al.type,s:al.status}));
+
+/* ─── 11. Yedek koruması ─── */
+await page.evaluate(()=>{ S.settings.lastBackupDate=null; S.settings.changesSinceBackup=0;
+                          S.settings.backupSnoozeUntil=null; saveSettings(); renderBanners(); });
+await page.waitForTimeout(200);
+T('Yedeksiz kırmızı şerit', await page.locator('.banner.bad').isVisible());
+T('Şerit metni', (await page.locator('.banner.bad').innerText()).includes('Hiç yedek yok'));
+await page.reload({waitUntil:'networkidle'}); await page.waitForTimeout(1300);
+T('Açılışta yedek paneli', (await page.locator('#sheet .sheet-title').innerText()).includes('Yedek Zamanı'));
+T('Panelde Drive önde', (await page.locator('#bk-share').innerText()).includes('Drive'));
+await page.locator('#bk-later').click(); await page.waitForTimeout(300);
+await page.reload({waitUntil:'networkidle'}); await page.waitForTimeout(1300);
+T('Yarın hatırlat paneli susturdu', await page.locator('#sheet-host').isHidden());
+T('Şerit yine de duruyor', await page.locator('.banner.bad').isVisible());
+const dl = page.waitForEvent('download');
+await page.locator('.banner.bad button').click(); await page.waitForTimeout(400);
+await page.locator('#bk-dl').click();
+const d = await dl;
+T('Yedek dosyası indi', /^turta_yedek_\d{4}-\d{2}-\d{2}\.json$/.test(d.suggestedFilename()), d.suggestedFilename());
+T('İnen yedek geçerli', (j=>j.app==='Turta'&&j.hearings.length===5)(JSON.parse(fs.readFileSync(await d.path(),'utf-8'))));
+await page.waitForTimeout(400);
+T('Yedek sonrası şerit kalktı', await page.locator('.banner.bad').count()===0);
+T('Değişiklik sayacı sıfırlandı', await page.evaluate(()=>S.settings.changesSinceBackup)===0);
+await page.evaluate(()=>{ for(let i=0;i<20;i++) pushUndo({label:'t',puts:[],dels:[]}); renderBanners(); });
+T('20 değişiklikte tekrar uyarı',
+  (dd=>dd&&dd.kind==='changes')(await page.evaluate(()=>backupDue())));
+
+/* ─── 12. Yerleşim ─── */
+const ovf = await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth);
+T('Yatay kaydırma yok', ovf<=1, 'fazla px='+ovf);
+
+console.log('\n────── GEÇTİ ('+ok.length+') ──────');
+ok.forEach(x=>console.log('  ✅ '+x));
+if (fail.length){ console.log('\n────── KALDI ('+fail.length+') ──────'); fail.forEach(x=>console.log('  ❌ '+x)); }
+if (errors.length){ console.log('\n────── KONSOL HATALARI ──────'); [...new Set(errors)].forEach(x=>console.log('  ⚠️  '+x)); }
+console.log('\nSONUÇ: '+ok.length+' geçti, '+fail.length+' kaldı, '+new Set(errors).size+' konsol hatası');
+
+await browser.close(); srv.close();
+process.exit(fail.length || errors.length ? 1 : 0);

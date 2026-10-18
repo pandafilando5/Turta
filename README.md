@@ -110,6 +110,56 @@ devreye girer. Toplu aktarım için *Ayarlar → Toplu .ics İndir*.
 
 ---
 
+## 💾 Veri güvenliği — en önemli bölüm
+
+### Önce acı gerçek
+
+Duruşma veriniz yalnızca bu telefonda saklanır. Bunun bedeli şudur:
+
+> **Chrome'da "Gezinme verilerini temizle" yaparken "Çerezler ve site verileri"
+> kutusu işaretliyse, bu uygulamanın tüm verisi silinir ve geri getirilemez.**
+
+Tarayıcı içindeki **hiçbir** depolama bundan kurtulmaz — `localStorage` de,
+IndexedDB'deki kalıcı ayna da. İkisi birlikte gider. Uygulamayı kaldırmak veya
+telefonu sıfırlamak da aynı sonucu verir.
+
+Tek gerçek koruma: **tarayıcının dışında duran bir yedek dosyası.**
+
+### Uygulama ne yapıyor
+
+| Katman | Neye karşı korur | Neye karşı korumaz |
+|---|---|---|
+| `localStorage` | — | her şey |
+| IndexedDB aynası + son 14 günün günlük anlık görüntüsü | Tarayıcının yer açmak için veriyi atması | **Site verilerini temizleme** |
+| **Dışa aktarılan JSON yedeği** | Temizlik, kaldırma, sıfırlama | Dosyayı da kaybetmek |
+| **Drive / WhatsApp'a gönderilen yedek** | Telefonun kaybolması, çalınması, bozulması | — |
+
+Bu yüzden uygulama ısrarcı:
+
+- **Hiç yedek yoksa** üstte kırmızı şerit durur ve kaybolmaz.
+- **7 günde bir** (ayarlanabilir) veya **20 değişiklikte** açılışta yedek paneli çıkar.
+- Panelde **"Drive'a Gönder"** önce gelir — telefona indirmekten daha güvenli.
+
+### Doğru alışkanlık
+
+**Ayarlar → 📤 Yedeği Paylaş → Drive.** Ayda bir bile yapsanız, en kötü ihtimalle
+bir aylık değişikliği kaybedersiniz; her şeyi değil.
+
+Telefona indirmek (⬇️ Yedek Al) de işe yarar — Chrome temizliği indirilmiş
+dosyaları silmez — ama telefon kaybolursa yedek de gider.
+
+### Veri kurtarma
+
+Bir şey olursa sırayla bakın:
+
+1. **Ayarlar → Kalıcı Yedekten Dön** — son 14 günün cihaz içi anlık görüntüleri
+   (yalnızca site verisi silinmediyse işe yarar)
+2. **İndirilenler klasörü** — `turta_yedek_*.json`
+3. **Drive / WhatsApp** — paylaştığınız yedekler
+4. **UYAP** — duruşma listesini yeniden indirip **Toplu Ekle** ile yapıştırın
+
+---
+
 ## 🔒 Gizlilik
 
 - **Duruşma verisi hiçbir zaman internete gönderilmez.** Telefonunuzun kendi
@@ -126,7 +176,7 @@ devreye girer. Toplu aktarım için *Ayarlar → Toplu .ics İndir*.
 
 ---
 
-## 💾 Veri güvenliği
+## 💾 Veri güvenliği (özet)
 
 Uygulama her kayıtta veriyi **iki yere birden** yazar:
 
@@ -134,8 +184,8 @@ Uygulama her kayıtta veriyi **iki yere birden** yazar:
 2. `IndexedDB` — kalıcı ayna + son 14 günün günlük anlık görüntüleri
 
 localStorage silinirse açılışta kalıcı yedekten kendiliğinden kurtarır.
-Yine de **asıl yedek sizin aldığınızdır**: Ayarlar → *Yedek Al (JSON)* veya
-*Yedeği Paylaş* (Drive / WhatsApp). Uygulama 14 günde bir hatırlatır.
+**Ama ikisi de tarayıcının içindedir** — ayrıntı için yukarıdaki
+“Veri güvenliği — en önemli bölüm” başlığına bakın.
 
 ---
 
@@ -155,8 +205,18 @@ index.html              uygulamanın tamamı (arayüz + mantık)
 manifest.webmanifest    PWA tanımı, ikonlar, kısayollar
 sw.js                   service worker (çevrimdışı önbellek)
 icons/                  192/512 px + maskable ikonlar
+test/smoke.mjs          otomatik doğrulama (65 kontrol)
 degerlendirme/          mimari değerlendirme ve karar gerekçeleri
 ```
+
+### Değişiklikten sonra test
+```bash
+npm install playwright
+node test/smoke.mjs
+```
+Gerçek Chromium'da, telefon boyutunda çalışır: service worker, tarih mantığı,
+metin ayrıştırma, erteleme akışı, geri alma, kalıcılık, ICS, yedek koruması.
+**Hepsi geçmeden yayına almayın.**
 
 ### Sık değiştirilecek yerler (`index.html` içinde)
 | Ne | Nerede |

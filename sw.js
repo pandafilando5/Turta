@@ -5,7 +5,7 @@
    yeni sürüm arka planda inip hazır olduğunda kullanıcıya bildirilsin.
    ============================================================ */
 
-const VERSION = 'v9.0.0';
+const VERSION = 'v9.1.0';
 const CACHE = 'turta-' + VERSION;
 
 const ASSETS = [
