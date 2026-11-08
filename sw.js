@@ -5,7 +5,7 @@
    yeni sürüm arka planda inip hazır olduğunda kullanıcıya bildirilsin.
    ============================================================ */
 
-const VERSION = 'v9.1.0';
+const VERSION = 'v10.0.0';
 const CACHE = 'turta-' + VERSION;
 
 const ASSETS = [
@@ -17,7 +17,12 @@ const ASSETS = [
   './icons/icon-maskable-192.png',
   './icons/icon-maskable-512.png',
   './icons/apple-touch-icon.png',
-  './icons/favicon-32.png'
+  './icons/favicon-32.png',
+  './sounds/turta_zil.wav',
+  './sounds/turta_kristal.wav',
+  './sounds/turta_damla.wav',
+  './sounds/turta_civilti.wav',
+  './sounds/turta_kutu.wav'
 ];
 
 // ---- Kurulum: kabuğu önbelleğe al ----

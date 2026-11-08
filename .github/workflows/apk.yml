@@ -81,7 +81,8 @@ jobs:
           cp apk/android/app/build/outputs/apk/release/app-release.apk "dist/Turta-v${{ steps.v.outputs.version }}.apk"
           cp apk/android/app/build/outputs/apk/release/app-release.apk dist/turta.apk
           ls -la dist
-          "$ANDROID_HOME"/build-tools/*/apksigner verify --print-certs dist/turta.apk | head -5 || true
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)
+          "${BT}apksigner" verify --print-certs dist/turta.apk | grep -E "Signer #1 certificate (DN|SHA-256)"
 
       - uses: actions/upload-artifact@v4
         with:

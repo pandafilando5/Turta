@@ -353,3 +353,79 @@ Ondan sonra telefonda tek dokunuşla kurulum ve verilerin aktarımı.
 
 Bu resmin **son üç satırı hariç tamamı** v9'da çalışıyor; son üç satır zaten yeni evin
 doğal sonucu. Geriye kalan tek şey evin kapısını açmak.
+
+---
+
+## 10. v10 — Android uygulaması, bildirim, Drive senkronu (8 Kasım 2026)
+
+**Girdi:** Kullanıcı talebi: APK'da veri yok; duruşmadan 30 dk önce bildirim; 5 kısa
+uyarı sesi; Drive senkronu; Codex'in eklediği “geçmiş/kapanan dosyalar” mantıksız;
+diğer hatalar düzeltilsin.
+
+**Önemli olgu:** Codex'in değişiklikleri ve APK'sı bu depoya hiç gönderilmemişti
+(dal, PR, release yok; son commit v9.1). Kullanıcının onayıyla iş **v9.1 üzerine**
+kuruldu; APK artık depodan, tekrarlanabilir biçimde üretiliyor.
+
+### 10.1 § 3.1 kararı neden değişti
+§ 3.1'de “sarmalayıcı APK bugün hiçbir şey vermez; anlamlı olması için yerel kod
+yazılmalı” denmişti. v10'da tam olarak bu yapıldı:
+
+| İhtiyaç | Çözüm (yerel kod) |
+|---|---|
+| Uygulama kapalıyken bildirim | `@capacitor/local-notifications` → Android `AlarmManager` (`setExactAndAllowWhileIdle`); yeniden başlatmada eklenti alarmları geri kurar. `USE_EXACT_ALARM` izni (takvim/hatırlatıcı uygulaması). |
+| Seçilebilir ses | Android 8+ sesi kanala bağlar ve sonradan değiştirmez → her ses ayrı kanal; yalnız seçili olan tutulur. |
+| Drive senkronu | `TurtaNativePlugin` (Java): Android Storage Access Framework ile kullanıcının Drive'da seçtiği dosyaya kalıcı okuma/yazma izni. |
+| APK'da çalışmayan web API'leri | `<a download>`, `navigator.share`, `window.open` WebView'da çalışmıyor → İndirilenler'e MediaStore ile kayıt, Capacitor Share, sistem uygulamasıyla açma. |
+
+Güncelleme yükü (§ 3.1'in asıl itirazı) şöyle hafifletildi: GitHub Actions her yayında
+APK'yı derleyip Releases'a koyuyor; uygulama yeni sürümü kendisi haber veriyor;
+sabit imza sayesinde üzerine kurulum veriyi korur.
+
+### 10.2 Drive: neden Google Drive API değil
+Drive API (OAuth) bir Google Cloud projesi, onay ekranı, istemci kimliği ve APK imza
+parmak izinin kaydını gerektirir; bunu kullanıcı adına kuramam. Ayrıca Google, OAuth'u
+gömülü WebView'da engeller. SAF yolu bunların hiçbirini gerektirmez ve Drive'ın kendi
+uygulaması yüklemeyi üstlenir.
+
+**Bilinen sınırlar (çıkarım, cihazda doğrulanmadı):** Drive'ın dosya sağlayıcısı
+okumada bir süre önbellekteki sürümü verebilir; iki telefon aynı anda düzenlerse
+eşitleme birkaç dakika gecikebilir. Bazı sağlayıcılar dosyayı kısaltmadan üzerine
+yazar → yazmada üç kademeli yöntem (`wt` → `rwt`+kısaltma → `w`) ve okumada sonu
+bozuk JSON'u tolere eden ayrıştırıcı var.
+
+**Birleştirme kuralı:** kayıt bazında, `updatedAt` büyük olan kazanır; silinen kayıt
+180 gün iz (tombstone) bırakır, öbür cihazdan geri gelmez. Geri al işlemi, geri
+getirdiği kaydın zaman damgasını yeniler (yoksa senkron eski hâli geri yazardı).
+
+### 10.3 Geçmiş duruşmalar
+Kullanıcının ilkesi: “Tüm duruşma listeleri var; geriye dönük olanlar ertelenmiş
+olmalı.” Uygulama:
+
+- “İşaret bekliyor” kutusu **kaldırıldı**; kullanıcıdan geçmiş kayıt için işaret istenmez.
+- Geçmiş + aktif + **aynı dosyada sonraki duruşması olan** kayıt → **Ertelendi**.
+- Sonrası olmayan geçmiş kayıt → **Geçti** (gri). Bunu “Ertelendi” saymadım: listede
+  sonraki gün yoksa ertelendiğine dair veri de yoktur (karar çıkmış olabilir).
+- Bu bir **çıkarımdır, kayda yazılmaz** (`effStatus`). Sonraki kayıt yanlışlıkla
+  girilip silinirse durum kendiliğinden düzelir.
+
+### 10.4 Bulunan ve düzeltilen hatalar (v9.1'de mevcuttu)
+
+| Hata | Etki |
+|---|---|
+| **Onay paneli “Evet”i yok sayıyordu** (`closeSheet()` sözü önce `false` ile çözüyordu) | Geri Yükle, Birleştirerek İçe Aktar, Sil, Tüm Verileri Sil, Kalıcı Yedekten Dön **hiç çalışmıyordu**. Veri aktaramama şikâyetinin olası nedeni. |
+| Dosyalar yalnız esas no ile gruplanıyordu | Farklı mahkemelerdeki aynı numaralı dosyalar tek dosya görünüyordu (birkaç yüz dosyalık bir portföyde olası bir çakışma). Artık esas no + mahkeme. |
+| Okunamayan tarih **bugüne** çevriliyordu | Bozuk satır “BUGÜN” duruşması gibi görünüyordu. Artık atlanıyor ve sayısı bildiriliyor. |
+| Birleştirmede tüm kimlikler yenileniyordu | Erteleme zinciri (`prevId`) kopuyordu. |
+| `new Notification()` Android Chrome'da hata verir | PWA bildirimi Android'de hiç çıkmıyordu → service worker üzerinden. |
+| Yılsız “5 Ocak” geçmiş yıla yazılıyordu | Sayısal biçimdeki yıl kaydırma kuralı ay adlı biçime de uygulandı. |
+| Haftalık paylaşım/ICS ertelenmiş eski tarihi de içeriyordu | Yalnız aktif kayıtlar. |
+| Tarih biçimleri | `2026-7-5`, `2026.07.05`, Excel seri günü artık okunuyor. |
+
+### 10.5 Yapılmayanlar / doğrulanmayanlar
+
+| Konu | Durum |
+|---|---|
+| Codex'in kodunun incelenmesi | ❌ Depoda yok |
+| Gerçek Android cihazda bildirim, ses, Drive yazma testi | ❌ Bu ortamda cihaz yok. JS tarafı sahte köprüyle test edildi; yerel kod CI'da derlendi. **İlk kurulumda “Deneme Bildirimi” ve “Şimdi Eşitle” ile doğrulayın.** |
+| Sabah özeti / günlük toplu bildirim | ❌ İstenmedi |
+| Ana ekran widget'ı | ❌ Kapsam dışı |

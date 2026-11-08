@@ -1,10 +1,75 @@
 # ⚖️ Turta — Duruşma Takip
 
 Av. Fuat DOBLAN için duruşma, dosya ve takvim takibi.
-Telefonda **gerçek uygulama gibi** çalışır: ana ekranda kendi ikonu vardır, tarayıcı
-çubuğu görünmez, internetsiz açılır.
+Aynı uygulama iki biçimde çalışır:
 
-**Sürüm:** v9.0 · Bağımlılık yok, derleme adımı yok, sunucu yok.
+| | **Android uygulaması (APK)** — önerilen | Tarayıcı / ana ekran (PWA) |
+|---|:--:|:--:|
+| Duruşmadan önce bildirim, **uygulama kapalıyken de** | ✅ | ❌ yalnızca açıkken |
+| 5 seçenekli bildirim sesi | ✅ | ✅ yalnızca açıkken |
+| Drive'daki bir dosyayla **otomatik senkron** | ✅ | ❌ elle yedek |
+| Kurulum | APK indir, kur | Chrome → “Uygulamayı yükle” |
+| Güncelleme | Yeni APK'yı üzerine kur (uygulama haber verir) | Kendiliğinden |
+
+**Sürüm:** v10.0 · Web katmanı tek dosya (`index.html`), bağımlılıksız. APK bu dosyayı
+paketler (`apk/`).
+
+---
+
+## 📲 Android uygulaması (APK)
+
+### Kurulum
+1. Telefonda şu adresi açın:
+   ```
+   https://github.com/pandafilando5/Turta/releases/latest/download/turta.apk
+   ```
+2. İnen dosyaya dokunun → **“Bu kaynaktan yüklemeye izin ver”** → **Yükle**.
+3. Daha önce başka bir Turta APK'sı (ör. Codex'in ürettiği) kuruluysa ve kurulum
+   “uygulama yüklenmedi” derse: **önce onu kaldırın** (farklı imzalı).
+
+**Güncelleme:** Uygulama yeni sürüm çıkınca üstte şerit gösterir → **İndir** → üzerine
+kurun. **Eski sürümü kaldırmayın**; veriler korunur.
+
+### Verilerinizi APK'ya taşıma (bir kez)
+APK, telefondaki Chrome/PWA sürümünün verisini **göremez** (Android her uygulamanın
+deposunu ayırır). Bu yüzden ilk açılışta liste boştur. Taşımak için:
+
+1. Tarayıcıdaki Turta → **Ayarlar → 📤 Yedeği Paylaş → Drive** (Drive'a kaydedin).
+2. APK → **☁️ Drive'daki yedeği bağla** → o dosyayı seçin → **Bağla ve birleştir**.
+
+Bundan sonra her değişiklik birkaç saniye içinde o Drive dosyasına da yazılır.
+
+### Bildirimler
+**Ayarlar → 🔔 Duruşma Bildirimi.** Varsayılan: duruşmadan **30 dk önce**
+(15/30/45/60/90 seçilebilir). Yalnızca *aktif* ve *yaklaşan* duruşmalar için kurulur;
+bir duruşmayı erteleyince, silince ya da düzenleyince plan kendiliğinden yenilenir.
+
+- **Ses:** Zil · Kristal · Damla · Cıvıltı · Müzik Kutusu (1–2 sn). ▶ ile dinleyip seçin.
+- **Deneme Bildirimi:** 5 sn sonra gelir — uygulamayı kapatıp deneyin.
+- **Pil kısıtlaması:** Xiaomi, Samsung, Huawei gibi telefonlarda “Pil Kısıtlamasını
+  Kaldır”ı bir kez yapın; yoksa bildirim gecikebilir.
+- Telefon yeniden başlasa da bildirimler geri kurulur.
+- Kilit ekranında içerik, telefonun kendi gizlilik ayarına uyar.
+
+### Drive senkronu
+**Ayarlar → ☁️ Drive Senkronu.** Google hesabıyla giriş, şifre, sunucu yok:
+Android'in dosya seçicisiyle Drive'da bir dosya seçersiniz; uygulama o dosyaya yazma
+izni alır, Drive uygulaması dosyayı buluta yükler.
+
+- Her değişiklikten ~3 sn sonra ve her açılışta eşitlenir.
+- İki telefon aynı dosyayı kullanabilir: kayıt bazında birleşir, aynı kaydın **en son
+  değiştirilen** hâli kalır; silinen kayıt öbür telefonda geri gelmez.
+- Uygulama silinse veya telefon değişse: yeni kurulumda aynı dosyayı bağlayın.
+- **Tüm Verileri Sil** önce senkronu kapatır; Drive'daki kopyaya dokunmaz.
+
+### APK imzası
+Güncellemenin eskisinin üzerine kurulabilmesi için her APK aynı anahtarla imzalanır.
+Anahtar `apk/android/app/turta-release.jks` olarak depodadır (depo herkese açık).
+**Sonucu:** başka biri de bu anahtarla “Turta” görünümlü bir APK imzalayabilir.
+Bu yüzden APK'yı **yalnızca bu deponun Releases sayfasından** kurun. Anahtarı gizli
+tutmak isterseniz GitHub Secrets'a `TURTA_KEYSTORE_B64` vb. ekleyin (bkz.
+`.github/workflows/apk.yml`) — anahtar değişeceği için bir kez kaldırıp kurmak gerekir;
+Drive senkronu açıksa veri kaybı olmaz.
 
 ---
 
@@ -84,10 +149,22 @@ kendiliğinden birikir.
 - **Takvimde sola/sağa kaydır** → ay değiştir
 - Her işlemden sonra **Geri Al** çıkar
 
-### “İşaret bekliyor”
-Tarihi geçmiş ama hâlâ *aktif* görünen duruşmalar ajandanın en üstünde ayrı bir
-kutuda toplanır; her biri için **Oldu / Ertelendi / Karar** düğmeleri vardır.
-Liste böylece çöp biriktirmez.
+### Geçmiş duruşmalar
+Ayrı bir “geçmiş” ya da “işaret bekliyor” bölümü **yoktur** (v9'daki kutu kaldırıldı).
+Duruşma listeleri eksiksiz geldiği için:
+
+- Tarihi geçmiş bir duruşmanın **aynı dosyada daha sonraki** bir duruşması varsa o
+  duruşma kendiliğinden **Ertelendi** sayılır.
+- Sonrası olmayan geçmiş duruşma **Geçti** (gri) görünür; sizden bir şey istenmez.
+- Geçmiş kayıtlar *Bugün / 7 Gün / Yaklaşan*'da görünmez; *Takvim*'de ve *Tümü*'nde
+  durur (Tümü açılınca bugüne kayar).
+- **Dosyalar**'da yaklaşan duruşması olmayan dosyalar tek satırlık bir düğmenin
+  arkasında durur.
+
+**Dosya = esas no + mahkeme.** Esas numarası mahkeme başına verildiği için
+“2025/123 E.” iki ayrı mahkemede iki ayrı dosyadır (v9 bunları birleştiriyordu).
+“E.”/“Esas”, “Mahkemesi” eki, büyük/küçük harf farkı eşleşmeyi bozmaz; *Talimat*
+dosyaları ayrı tutulur.
 
 ### Yeni duruşma eklemek
 **＋** düğmesi. En üstteki **⚡ Akıllı Giriş** kutusuna UYAP'tan kopyaladığınız metni
@@ -101,12 +178,10 @@ kontrol edip kaydedersiniz.
   🚨 *bina değişikliği* uyarısı verir (aynı binada 60 dk, farklı binada 90 dk eşiği).
 
 ### Hatırlatma / alarm
-Uygulama içi bildirim yalnızca **uygulama açıkken** çalışır — bunu güvenilir bir
-alarm olarak kullanmayın.
-
-**Doğru yöntem:** duruşmaya dokunun → **📆 Takvime**. Google Takvim açılır, tek
-dokunuşla kaydedersiniz. Telefonunuzun kendi alarmı, kilit ekranı ve akıllı saatiniz
-devreye girer. Toplu aktarım için *Ayarlar → Toplu .ics İndir*.
+**Android uygulamasında** bildirim uygulama kapalıyken de gelir (yukarıda,
+“Bildirimler”). **Tarayıcı sürümünde** yalnızca uygulama açıkken çalışır — orada
+güvenilir alarm için duruşmaya dokunun → **📆 Takvime** (Google Takvim) ya da
+*Ayarlar → Toplu .ics İndir*.
 
 ---
 
@@ -162,8 +237,11 @@ Bir şey olursa sırayla bakın:
 
 ## 🔒 Gizlilik
 
-- **Duruşma verisi hiçbir zaman internete gönderilmez.** Telefonunuzun kendi
-  deposunda (localStorage + IndexedDB) durur.
+- **Duruşma verisi hiçbir sunucuya gönderilmez.** Telefonunuzun kendi deposunda
+  (localStorage + IndexedDB) durur. APK'da Drive senkronunu açarsanız ayrıca
+  **sizin seçtiğiniz** Drive dosyasına yazılır — o dosya sizin Google hesabınızdadır.
+- APK'nın internete çıktığı tek yer: günde bir kez GitHub'a “son sürüm numarası ne?”
+  sorusu (veri içermez).
 - Bu depoda yalnızca **uygulamanın kodu** vardır; müvekkil adı, esas no, mahkeme
   bilgisi **yoktur** ve hiçbir zaman olmamıştır.
 - `.gitignore`, yedek/arşiv dosyalarının yanlışlıkla depoya eklenmesini engeller.
@@ -201,11 +279,16 @@ localStorage silinirse açılışta kalıcı yedekten kendiliğinden kurtarır.
 
 ### Dosyalar
 ```
-index.html              uygulamanın tamamı (arayüz + mantık)
+index.html              uygulamanın tamamı (arayüz + mantık) — PWA ve APK ortak
 manifest.webmanifest    PWA tanımı, ikonlar, kısayollar
-sw.js                   service worker (çevrimdışı önbellek)
+sw.js                   service worker (yalnızca PWA; APK'da kapalı)
 icons/                  192/512 px + maskable ikonlar
-test/smoke.mjs          otomatik doğrulama (65 kontrol)
+sounds/                 5 bildirim sesi (apk/scripts/make-sounds.py üretir)
+apk/                    Android kabuğu (Capacitor 8)
+  android/…/TurtaNativePlugin.java   Drive dosyası senkronu, İndirilenler, ayar kısayolları
+  scripts/              www hazırlama, ses ve ikon üreticileri
+.github/workflows/apk.yml   APK derleme, imzalama, Releases'a koyma
+test/smoke.mjs          otomatik doğrulama (120 kontrol; APK modu sahte köprüyle)
 degerlendirme/          mimari değerlendirme ve karar gerekçeleri
 ```
 
@@ -215,8 +298,19 @@ npm install playwright
 node test/smoke.mjs
 ```
 Gerçek Chromium'da, telefon boyutunda çalışır: service worker, tarih mantığı,
-metin ayrıştırma, erteleme akışı, geri alma, kalıcılık, ICS, yedek koruması.
-**Hepsi geçmeden yayına almayın.**
+metin ayrıştırma, erteleme, geri alma, kalıcılık, ICS, yedek koruması, geçmiş
+duruşma çıkarımı, dosya kimliği, birleştirme; APK modu için sahte bir Capacitor
+köprüsüyle bildirim planlama, ses kanalı, Drive senkronu, yerel kaydetme, geri tuşu.
+**Hepsi geçmeden yayına almayın.** Gerçek Android cihazdaki davranış (bildirimin
+gerçekten çalması, Drive'ın dosyayı yüklemesi) bu testlerin kapsamı dışındadır.
+
+### APK derleme
+`main`'e her push'ta (ya da commit mesajında `[apk]` varsa, ya da Actions'tan elle)
+GitHub Actions APK'yı derler ve **Releases**'a koyar. Yerelde derlemek için Android
+SDK + JDK 21:
+```bash
+cd apk && npm ci && npm run apk
+```
 
 ### Sık değiştirilecek yerler (`index.html` içinde)
 | Ne | Nerede |
@@ -233,6 +327,8 @@ Adli tatil aralığı ve kendi tatil günleriniz **uygulama içinden** düzenlen
 ### Sürüm çıkarken
 `index.html` içindeki `APP_VERSION` ile `sw.js` içindeki `VERSION` **birlikte**
 yükseltilmelidir; yoksa telefonlar eski önbelleği kullanmaya devam eder.
+APK sürümü (`versionName`/`versionCode`) `APP_VERSION`'dan otomatik okunur; APK'nın
+eski sürümün üzerine kurulabilmesi için `APP_VERSION` her yayında **artmalıdır**.
 
 ---
 
@@ -249,6 +345,15 @@ bir sonraki açılışta alır; hazır olduğunda üstte “Yeni sürüm hazır�
 **Veriler kayboldu**
 Ayarlar → *Kalıcı Yedekten Dön* (son 14 günün anlık görüntüleri).
 Oradan da çıkmazsa aldığınız JSON yedeğini geri yükleyin.
+
+**APK'da bildirim gelmiyor**
+Ayarlar → Duruşma Bildirimi: (1) anahtar açık mı, (2) “Deneme Bildirimi” geliyor mu,
+(3) “Pil Kısıtlamasını Kaldır” görünüyorsa yapın, (4) “Android Bildirim Ayarları”nda
+Turta'nın bildirimleri ve sesi açık mı, (5) Rahatsız Etmeyin kapalı mı.
+
+**APK'da kayıt yok**
+Beklenen: APK, tarayıcı sürümünün deposunu göremez. Yukarıdaki
+“Verilerinizi APK'ya taşıma” adımlarını uygulayın.
 
 **Eski uygulamadaki kayıtlar burada yok**
 Beklenen davranış: `file://` ile `https://` ayrı depolama alanlarıdır.

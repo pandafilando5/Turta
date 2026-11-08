@@ -66,9 +66,9 @@ public class TurtaNativePlugin extends Plugin {
     public void syncPickOpen(PluginCall call) {
         Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
         intent.addCategory(Intent.CATEGORY_OPENABLE);
+        // Tür süzgeci yok: Drive bazı .json dosyalarını farklı MIME türüyle bildiriyor,
+        // süzgeç dosyayı gizleyebiliyordu. İçerik JS tarafında doğrulanır.
         intent.setType("*/*");
-        intent.putExtra(Intent.EXTRA_MIME_TYPES,
-            new String[] { "application/json", "text/plain", "application/octet-stream", "text/json" });
         intent.addFlags(RW | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
         startActivityForResult(call, intent, "onPicked");
     }
@@ -236,6 +236,26 @@ public class TurtaNativePlugin extends Plugin {
             call.resolve(ret);
         } catch (Exception e) {
             call.reject("Kaydedilemedi: " + e.getMessage(), "SAVE_FAILED", e);
+        }
+    }
+
+    // ───────────── Harici bağlantı ─────────────
+
+    /** Google Takvim, Drive klasörü, APK indirme vb. — sistemin uygun uygulamasıyla açar. */
+    @PluginMethod
+    public void openUrl(PluginCall call) {
+        String url = call.getString("url");
+        if (url == null || !(url.startsWith("https://") || url.startsWith("http://"))) {
+            call.reject("Geçersiz adres", "BAD_URL");
+            return;
+        }
+        try {
+            Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+            i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            getContext().startActivity(i);
+            call.resolve();
+        } catch (Exception e) {
+            call.reject("Açacak uygulama bulunamadı", "NO_APP", e);
         }
     }
 

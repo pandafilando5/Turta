@@ -34,8 +34,9 @@
   --st-active:#2e7d32; --st-done:#1565c0; --st-decided:#6a1b9a; --st-postponed:#ef6c00;
 
   --r-s:8px; --r-m:14px; --r-l:20px; --r-xl:26px;
-  --safe-b:env(safe-area-inset-bottom,0px);
-  --safe-t:env(safe-area-inset-top,0px);
+  /* Android uygulamasında Capacitor --safe-area-inset-* değişkenlerini verir */
+  --safe-b:var(--safe-area-inset-bottom, env(safe-area-inset-bottom,0px));
+  --safe-t:var(--safe-area-inset-top, env(safe-area-inset-top,0px));
   --navh:60px;
 }
 [data-theme="night"]{
@@ -215,7 +216,7 @@ button{cursor:pointer;border:none;background:none;padding:0}
 .hrow-in.t-ek{border-left-color:var(--t-ek)}
 .hrow-in.t-tev{border-left-color:var(--t-tev)}
 .hrow-in.t-fuat{border-left-color:var(--t-fuat)}
-.hrow.s-done .hrow-in,.hrow.s-decided .hrow-in{opacity:.62}
+.hrow.s-done .hrow-in,.hrow.s-decided .hrow-in,.hrow.s-past .hrow-in{opacity:.62}
 .hrow.s-postponed .hrow-in{opacity:.75}
 
 .h-time{
@@ -251,38 +252,13 @@ button{cursor:pointer;border:none;background:none;padding:0}
 .stdot.done{background:var(--st-done)}
 .stdot.decided{background:var(--st-decided)}
 .stdot.postponed{background:var(--st-postponed)}
+.stdot.past{background:var(--text-3)}
 
 /* Kaydırma arka planı */
 .swipe-bg{position:absolute;inset:0;display:flex;align-items:center;justify-content:space-between;padding:0 20px;font-size:13px;font-weight:800;color:#fff}
 .swipe-bg .sw-l{opacity:0}
 .swipe-bg .sw-r{opacity:0}
 .swipe-bg{background:linear-gradient(90deg,var(--st-done) 50%,var(--st-postponed) 50%)}
-
-/* İşaret bekleyen geçmiş duruşmalar */
-.stale{
-  background:var(--surface);border-radius:var(--r-m);
-  border:1.5px solid var(--warning);margin-bottom:14px;overflow:hidden;
-  box-shadow:0 1px 6px var(--shadow);
-}
-.stale-h{
-  display:flex;align-items:center;gap:8px;padding:11px 13px;
-  background:rgba(239,108,0,.10);font-size:12.5px;font-weight:800;color:var(--warning);
-}
-.stale-h span{margin-left:auto;font-weight:700;opacity:.85}
-.stale-r{padding:10px 13px;border-top:1px solid var(--border)}
-.stale-top{display:flex;gap:10px;align-items:baseline}
-.stale-d{font-size:12px;font-weight:800;color:var(--text-2);white-space:nowrap;font-variant-numeric:tabular-nums}
-.stale-c{flex:1;min-width:0;font-size:13.5px;font-weight:600;line-height:1.35;word-break:break-word}
-.stale-f{font-size:11px;color:var(--text-3);margin-top:2px}
-.stale-b{display:flex;gap:6px;margin-top:8px}
-.stale-b button{
-  flex:1;padding:9px 4px;border-radius:9px;font-size:12px;font-weight:800;
-  background:var(--surface-2);color:var(--text-2);
-}
-.stale-b button:active{opacity:.75}
-.stale-b .b-done{background:var(--st-done);color:#fff}
-.stale-b .b-post{background:var(--st-postponed);color:#fff}
-.stale-b .b-dec{background:var(--st-decided);color:#fff}
 
 /* 14 günlük yoğunluk şeridi */
 .strip{
@@ -380,6 +356,11 @@ button{cursor:pointer;border:none;background:none;padding:0}
   text-align:right;font-size:11px;font-weight:700;color:var(--text-2);line-height:1.3;
 }
 .fg-next b{display:block;font-size:12.5px;color:var(--primary)}
+.idle-toggle{
+  display:block;width:100%;padding:12px;margin:4px 0 10px;border-radius:var(--r-m);
+  background:var(--surface-2);color:var(--text-2);font-size:12.5px;font-weight:700;text-align:center;
+}
+.fgroup.idle{opacity:.78}
 
 /* ============================================================
    8. ÖZET
@@ -596,6 +577,19 @@ textarea.inp{resize:vertical;min-height:64px;line-height:1.5}
 .tl-i.done::before{background:var(--st-done)}
 .tl-i.decided::before{background:var(--st-decided)}
 .tl-i.postponed::before{background:var(--st-postponed)}
+.tl-i.past::before{background:var(--text-3)}
+
+/* Ses seçimi */
+.snd{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;
+  background:var(--bg);margin-bottom:7px;border:2px solid transparent}
+.snd.on{border-color:var(--primary);background:var(--surface-2)}
+.snd-e{font-size:22px;width:30px;text-align:center}
+.snd-l{flex:1;font-weight:700;font-size:14px}
+.snd-play{width:40px;height:40px;border-radius:50%;background:var(--primary);color:var(--on-primary);
+  font-size:15px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.snd-pick{padding:8px 13px;border-radius:999px;background:var(--surface);border:1.5px solid var(--border);
+  font-size:12px;font-weight:800;color:var(--text-2)}
+.snd.on .snd-pick{background:var(--success);border-color:var(--success);color:#fff}
 .tl-d{font-size:13.5px;font-weight:700}
 .tl-m{font-size:11.5px;color:var(--text-3);margin-top:2px}
 
@@ -736,11 +730,17 @@ textarea.inp{resize:vertical;min-height:64px;line-height:1.5}
 <script>
 "use strict";
 /* ════════════════════════════════════════════════════════════
-   TURTA — Duruşma Takip · v9.0
-   Tek dosya, bağımlılıksız, çevrimdışı çalışan PWA.
+   TURTA — Duruşma Takip · v10
+   Tek dosya, bağımlılıksız. Aynı dosya iki yerde çalışır:
+     • tarayıcıda / ana ekranda PWA olarak (GitHub Pages)
+     • Android uygulaması (APK) içinde — apk/ klasörü bu dosyayı paketler.
+   APK'da ek olarak: duruşmadan önce gerçek bildirim (uygulama kapalıyken de),
+   seçilebilir bildirim sesi, Drive'daki bir dosyayla otomatik senkron.
    ════════════════════════════════════════════════════════════ */
 
-const APP_VERSION = '9.1.0';
+const APP_VERSION = '10.0.0';
+const REPO = 'pandafilando5/Turta';
+const APK_URL = `https://github.com/${REPO}/releases/latest/download/turta.apk`;
 
 /* HTML dışa aktarımı bu diziyi doldurur (aşağıdaki downloadHTML). */
 const EMBEDDED_DATA = [];
@@ -748,6 +748,7 @@ const EMBEDDED_DATA = [];
 // ─────────────── Sabitler ───────────────
 const K = {
   data:'turta.v9.data', settings:'turta.v9.settings', undo:'turta.v9.undo',
+  tomb:'turta.v10.tomb', notified:'turta.v10.notified',
   legacyData:'avFuatDoblan_v7', legacySettings:'avFuatDoblan_settings'
 };
 const MONTHS = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
@@ -768,6 +769,20 @@ const STATUS = {
   decided:  { label:'Karar Verildi',emoji:'⚖️' },
   postponed:{ label:'Ertelendi',   emoji:'⏸️' }
 };
+/* Yalnızca görüntüleme: tarihi geçmiş, aynı dosyada sonrası olmayan kayıt.
+   Kaydedilen bir durum değildir; formda seçilemez. (bkz. effStatus) */
+const DSTATUS = {...STATUS, past:{ label:'Geçti', emoji:'⏺️' }};
+
+/* Bildirim sesleri — apk/scripts/make-sounds.py üretir.
+   Android'de her ses ayrı bir bildirim kanalıdır (Android 8+ sesi kanala bağlar). */
+const SOUNDS = [
+  { id:'turta_zil',     label:'Zil',          emoji:'🔔' },
+  { id:'turta_kristal', label:'Kristal',      emoji:'✨' },
+  { id:'turta_damla',   label:'Damla',        emoji:'💧' },
+  { id:'turta_civilti', label:'Cıvıltı',      emoji:'🐦' },
+  { id:'turta_kutu',    label:'Müzik Kutusu', emoji:'🎶' }
+];
+const LEAD_OPTIONS = [15, 30, 45, 60, 90];
 
 /* 2429 s. Kanun'a göre sabit tarihli ulusal bayram / genel tatiller.
    Dinî bayramlar her yıl kaydığı için buraya konmaz — Ayarlar'dan elle eklenir. */
@@ -797,7 +812,12 @@ const DEFAULT_SETTINGS = {
   installDismissed:false,
   haptics:true,        // dokunsal geri bildirim
   pin:null,            // opsiyonel açılış kilidi (4-8 hane)
-  fileLinks:{}         // { '2025/123 E.': 'https://drive.google.com/...' }
+  fileLinks:{},        // { dosyaAnahtarı: 'https://drive.google.com/...' }
+  notifyLead:30,       // bildirim: duruşmadan kaç dk önce
+  notifySound:'turta_zil',
+  deviceId:null,       // senkron: bu cihazın kimliği
+  sync:null,           // { uri, name, persisted, lastOk, lastErr } — yalnızca APK
+  lastUpdateCheck:null // APK güncelleme denetimi (günde bir)
 };
 
 /* Erteleme gerekçeleri — tek dokunuşla not.
@@ -818,6 +838,11 @@ const S = {
   hearings:[],
   settings:{...DEFAULT_SETTINGS},
   undo:[],
+  tomb:{},             // senkron için silinen kayıtlar { id: zaman }
+  later:new Set(),     // aynı dosyada daha sonraki duruşması olan kayıtlar
+  showIdleFiles:false,
+  notifInfo:null,      // { perm, exact, count, err } — APK bildirim durumu
+  update:null,         // { version, url } — yeni APK sürümü varsa
   page:'agenda',
   seg:'today',
   filter:'all',
@@ -875,6 +900,49 @@ async function copyText(t, msg){
   try{ document.execCommand('copy'); toast(msg||'📋 Kopyalandı'); }
   catch(_){ toast('Kopyalanamadı'); }
   document.body.removeChild(ta);
+}
+
+// ── Yerel köprü (yalnızca Android uygulamasında) ──
+/* Capacitor, APK içinde sayfaya window.Capacitor'ı enjekte eder. Paketleyici
+   kullanmadığımız için eklentileri doğrudan nativePromise ile çağırıyoruz.
+   Tarayıcıda (PWA) NATIVE=false ve bu fonksiyonların hiçbiri çalışmaz.     */
+const CAP = window.Capacitor;
+const NATIVE = !!(CAP && typeof CAP.isNativePlatform==='function' && CAP.isNativePlatform());
+function nat(plugin, method, opts){
+  if (!NATIVE) return Promise.reject(new Error('Yalnızca Android uygulamasında'));
+  return CAP.nativePromise(plugin, method, opts||{});
+}
+function natOn(plugin, event, cb){
+  try { return NATIVE ? CAP.addListener(plugin, event, cb) : null; } catch(e){ return null; }
+}
+function errMsg(e){ return (e && (e.message || e.errorMessage)) || String(e||'bilinmeyen hata'); }
+const isCancel = e => /iptal|cancel/i.test(errMsg(e));
+
+/** Harici bağlantı: APK'da sistem uygulaması (tarayıcı, Takvim, Drive), tarayıcıda yeni sekme. */
+function openExternal(url){
+  if (NATIVE) { nat('TurtaNative','openUrl',{url}).catch(e=>toast('Açılamadı: '+errMsg(e))); return; }
+  window.open(url, '_blank', 'noopener');
+}
+/** APK: dosyayı Android paylaşım menüsüne ver (Drive, WhatsApp, e-posta…). */
+async function nativeShareFile(name, mime, content, title){
+  const w = await nat('Filesystem','writeFile',
+    {path:name, data:content, directory:'CACHE', encoding:'utf8', recursive:true});
+  try {
+    await nat('Share','share',{title:title||name, dialogTitle:title||'Paylaş', files:[w.uri]});
+    return true;
+  } catch(e){ if (isCancel(e)) return false; throw e; }
+}
+/** APK: İndirilenler/Turta klasörüne kaydet (uygulama silinse de kalır). */
+async function nativeSave(name, mime, content){
+  try {
+    await nat('TurtaNative','saveToDownloads',{name, mime, data:content});
+    toast(`💾 Kaydedildi: İndirilenler › Turta › ${name}`, 5000);
+    return true;
+  } catch(e){
+    // Android 9 ve öncesi: paylaşım menüsüne düş
+    try { return await nativeShareFile(name, mime, content, name); }
+    catch(e2){ toast('❌ Kaydedilemedi: '+errMsg(e2), 5000); return false; }
+  }
 }
 
 // ── Tarih (her zaman YEREL — UTC kayması yok) ──
@@ -1082,8 +1150,15 @@ function normalize(raw){
     createdAt: +h.createdAt || Date.now(),
     updatedAt: +h.updatedAt || Date.now()
   };
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(o.date)) o.date = todayISO();
+  /* Tarihi okunamayan kayıt BUGÜNE çevrilmez (v9'daki hata: yanlış bir duruşma
+     "BUGÜN" görünüyordu). Tarih boş kalır; içe aktarma bu kayıtları atlar ve sayısını söyler. */
+  if (!isValidISO(o.date)) o.date = '';
   return o;
+}
+function isValidISO(s){
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s||'')) return false;
+  const d = parseD(s);
+  return toISO(d) === s;          // 2026-02-31 gibi taşmaları da reddeder
 }
 function normTime(t){
   const m = String(t||'').match(/(\d{1,2})[:.](\d{1,2})/);
@@ -1092,12 +1167,18 @@ function normTime(t){
   const mi = Math.min(59, Math.max(0, +m[2]));
   return pad(h)+':'+pad(mi);
 }
-/** 'YYYY-MM-DD' | '15.10.2026' | '15/10/2026' | ISO damgası → 'YYYY-MM-DD' */
+/** 'YYYY-MM-DD' | 'YYYY-M-D' | 'YYYY.MM.DD' | '15.10.2026' | '15/10/26' |
+    ISO damgası | Excel seri günü (46310) → 'YYYY-MM-DD' */
 function normDate(v){
   const s = String(v==null?'':v).trim();
   if (!s) return '';
-  let m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (m) return `${m[1]}-${m[2]}-${m[3]}`;
+  // Excel'den sayı olarak gelen tarih (1900 tarih sistemi; 1899-12-30 tabanı)
+  if (/^\d{5}(\.\d+)?$/.test(s) && +s>20000 && +s<80000){
+    const d = new Date(1899, 11, 30); d.setDate(d.getDate() + Math.floor(+s));
+    return toISO(d);
+  }
+  let m = s.match(/^(\d{4})[-.\/](\d{1,2})[-.\/](\d{1,2})/);
+  if (m) return `${m[1]}-${pad(+m[2])}-${pad(+m[3])}`;
   m = s.match(/^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{2,4})/);
   if (m){ let y=+m[3]; if(y<100) y+=2000; return `${y}-${pad(+m[2])}-${pad(+m[1])}`; }
   return s.slice(0,10);
@@ -1105,6 +1186,51 @@ function normDate(v){
 function byId(id){ return S.hearings.find(h=>h.id===String(id)); }
 function sortChrono(a,b){
   return (a.date+a.time).localeCompare(b.date+b.time) || a.court.localeCompare(b.court,'tr');
+}
+
+/* ── Dosya kimliği ──
+   Esas numarası mahkeme başına verilir: "2025/123 E." iki ayrı mahkemede iki ayrı
+   dosyadır. v9 dosyaları yalnızca numaraya göre grupluyordu; farklı mahkemelerin
+   aynı numaralı dosyaları tek dosya gibi birleşiyordu. Artık dosya = esas no + mahkeme.
+   Yazım farkı ("E."/"Esas", "Mahkemesi" eki, büyük/küçük harf) eşleşmeyi bozmaz.     */
+function courtKey(c){
+  return fold(c).replace(/\b(mahkemesi|mahkeme|mahk|mah|hakimligi|hakimlik)\b/g,'')
+                .replace(/[^a-z0-9]/g,'');
+}
+function fileNoKey(f){
+  const s = fold(f);
+  const m = s.match(/(\d{4})\s*\/\s*(\d+)/);
+  if (!m) return s.replace(/[^a-z0-9]/g,'');
+  const rest = s.replace(m[0],' ');
+  const kind = /tal/.test(rest) ? 't' : /d\.?\s*is\b|degisik/.test(rest) ? 'd' : '';
+  return `${m[1]}/${+m[2]}${kind}`;
+}
+function fileKey(h){ return h.file ? fileNoKey(h.file)+'@'+courtKey(h.court) : ''; }
+
+/* ── Geçmiş duruşmalar ──
+   Duruşma listeleri eksiksiz geldiği için: tarihi geçmiş ama "aktif" kalmış bir
+   kaydın aynı dosyada daha sonraki bir duruşması varsa o kayıt ERTELENMİŞTİR.
+   Bu bir çıkarımdır, kayda yazılmaz (sonraki kayıt silinirse kendiliğinden düzelir).
+   Sonrası olmayan geçmiş kayıt "Geçti" görünür; kullanıcıdan işaret istenmez.       */
+function recompute(){
+  const groups = new Map();
+  for (const h of S.hearings){
+    const k = fileKey(h); if (!k) continue;
+    if (!groups.has(k)) groups.set(k, []);
+    groups.get(k).push(h);
+  }
+  const later = new Set();
+  for (const arr of groups.values()){
+    if (arr.length<2) continue;
+    let max=''; arr.forEach(h=>{ const s=h.date+h.time; if (s>max) max=s; });
+    arr.forEach(h=>{ if ((h.date+h.time) < max) later.add(h.id); });
+  }
+  S.later = later;
+}
+function isPastH(h){ return h.date < todayISO(); }
+function effStatus(h){
+  if (h.status!=='active' || !isPastH(h)) return h.status;
+  return S.later.has(h.id) ? 'postponed' : 'past';
 }
 
 function loadAll(){
@@ -1125,8 +1251,29 @@ function loadAll(){
   // HTML'e gömülü veri (arşiv dosyası açıldığında)
   if (!raw && Array.isArray(EMBEDDED_DATA) && EMBEDDED_DATA.length) raw = EMBEDDED_DATA;
 
-  S.hearings = Array.isArray(raw) ? raw.map(normalize) : [];
+  S.hearings = Array.isArray(raw) ? raw.map(normalize).filter(h=>h.date) : [];
   S.undo = lsGet(K.undo,[]) || [];
+
+  // Senkron: silinen kayıtların izi (180 günden eskisi atılır)
+  const tomb = lsGet(K.tomb,{}) || {};
+  const cut = Date.now() - 180*864e5;
+  S.tomb = {};
+  for (const [id,ts] of Object.entries(tomb)) if (+ts > cut) S.tomb[id] = +ts;
+  if (!S.settings.deviceId) { S.settings.deviceId = uid().slice(1); saveSettings(); }
+
+  // v9: klasör bağlantıları yalnız esas no ile tutuluyordu → dosya anahtarına taşı
+  migrateFileLinks();
+}
+function migrateFileLinks(){
+  const L = S.settings.fileLinks || {};
+  let changed = false;
+  for (const [k,v] of Object.entries(L)) {
+    if (k.includes('@')) continue;
+    const keys = [...new Set(S.hearings.filter(h=>h.file===k).map(fileKey))];
+    keys.forEach(fk=>{ if (!L[fk]) L[fk]=v; });
+    if (keys.length) { delete L[k]; changed = true; }
+  }
+  if (changed) { S.settings.fileLinks = L; saveSettings(); }
 }
 
 /** localStorage boş/bozuksa IndexedDB aynasından kurtar. */
@@ -1135,7 +1282,7 @@ async function recoverIfEmpty(){
   try {
     const cur = await idbGet('kv','current');
     if (cur && Array.isArray(cur.v) && cur.v.length) {
-      S.hearings = cur.v.map(normalize);
+      S.hearings = cur.v.map(normalize).filter(h=>h.date);
       persist({undoable:false, silent:true});
       toast(`💽 Kalıcı yedekten ${S.hearings.length} kayıt geri yüklendi`, 5000);
       renderAll();
@@ -1149,10 +1296,19 @@ function persist(opt={}){
   if (!ok && !opt.silent) {
     toast('⚠️ Cihaz depolaması yazılamadı! Hemen yedek alın.', 8000);
   }
+  lsSet(K.tomb, S.tomb);
   // Kalıcı ayna (asenkron, hata yutulur)
   idbPut('kv',{k:'current', v:S.hearings, ts:Date.now()}).catch(()=>{});
   idbPut('snaps',{d:todayISO(), v:S.hearings, ts:Date.now()})
     .then(pruneSnaps).catch(()=>{});
+  // APK: bildirim planını ve Drive dosyasını tazele (gecikmeli, toplu)
+  scheduleNotifSync();
+  if (!opt.fromSync) scheduleDriveSync();
+}
+/** Silinen kaydın izini tut — senkron diğer cihazdan geri getirmesin. */
+function tombstone(ids){
+  const now = Date.now();
+  ids.forEach(id=>{ S.tomb[id] = now; });
 }
 async function pruneSnaps(){
   try {
@@ -1177,8 +1333,14 @@ function doUndo(){
   const op = S.undo.pop();
   if (!op) { toast('Geri alınacak işlem yok'); return; }
   lsSet(K.undo, S.undo);
-  (op.dels||[]).forEach(id => { S.hearings = S.hearings.filter(h=>h.id!==id); });
-  (op.puts||[]).forEach(rec => {
+  const now = Date.now();
+  const dels = new Set(op.dels||[]);
+  S.hearings = S.hearings.filter(h=>!dels.has(h.id));
+  tombstone([...dels]);
+  (op.puts||[]).forEach(old => {
+    // Geri alınan sürüm "en yeni" sayılmalı; yoksa senkron eski hâli geri getirir.
+    const rec = {...old, updatedAt:now};
+    delete S.tomb[rec.id];
     const i = S.hearings.findIndex(h=>h.id===rec.id);
     if (i>=0) S.hearings[i]=rec; else S.hearings.push(rec);
   });
@@ -1206,6 +1368,7 @@ function updateHearing(id, data){
 function removeHearing(id){
   const rec = byId(id); if (!rec) return;
   S.hearings = S.hearings.filter(h=>h.id!==rec.id);
+  tombstone([rec.id]);
   pushUndo({label:'silme', puts:[rec], dels:[]});
   persist(); renderAll();
   toastUndo('🗑️ Silindi');
@@ -1213,7 +1376,7 @@ function removeHearing(id){
 function setStatus(id, st){
   const rec = byId(id); if (!rec || rec.status===st) return;
   const before = {...rec};
-  rec.status = st; rec.updatedAt = Date.now();
+  S.hearings[S.hearings.indexOf(rec)] = {...rec, status:st, updatedAt:Date.now()};
   pushUndo({label:'durum', puts:[before], dels:[]});
   persist(); renderAll(); buzz();
   toastUndo(STATUS[st].emoji+' '+STATUS[st].label);
@@ -1222,7 +1385,8 @@ function setStatus(id, st){
 function postpone(id, {date, time, note}){
   const old = byId(id); if (!old) return null;
   const before = {...old};
-  old.status='postponed'; old.updatedAt=Date.now();
+  const i = S.hearings.indexOf(old);
+  S.hearings[i] = {...old, status:'postponed', updatedAt:Date.now()};
   const rec = normalize({
     id:uid(), date, time, court:old.court, file:old.file, client:old.client,
     type:old.type, status:'active', note:note||'', prevId:old.id,
@@ -1300,8 +1464,13 @@ function smartParse(text){
     const mm = fs.match(re);
     if (mm) {
       const mi = MONTHS.findIndex(m=>fold(m)===mm[2]);
-      const yy = mm[3] ? +mm[3] : Y;
-      if (mi>=0) out.date = `${yy}-${pad(mi+1)}-${pad(+mm[1])}`;
+      if (mi>=0) {
+        let iso = `${mm[3] ? +mm[3] : Y}-${pad(mi+1)}-${pad(+mm[1])}`;
+        // Yıl yazılmamışsa ve tarih bir aydan fazla geçmişte kalıyorsa: gelecek yıl
+        // (v9 "5 Ocak"ı Kasım'da geçmiş yıla yazıyordu; sayısal biçim zaten böyleydi)
+        if (!mm[3] && dayDiff(iso, todayISO()) < -30) iso = `${Y+1}-${pad(mi+1)}-${pad(+mm[1])}`;
+        out.date = iso;
+      }
     } else if ((dm = s.match(/\b(\d{1,2})\s*[.\/]\s*(\d{1,2})\b(?!\s*[.\/:]\s*\d)/))) {
       // "15.10" → yıl: bu yıl, geçmişse gelecek yıl
       let iso = `${Y}-${pad(+dm[2])}-${pad(+dm[1])}`;
@@ -1349,7 +1518,7 @@ function smartParse(text){
 function searchMatch(h, q){
   if (!q) return true;
   const hay = fold([h.court,h.file,h.client,h.note,TYPES[h.type].label,
-                    STATUS[h.status].label, fmtNum(h.date), fmtLong(h.date), h.time].join(' '));
+                    DSTATUS[effStatus(h)].label, fmtNum(h.date), fmtLong(h.date), h.time].join(' '));
   return fold(q).split(/\s+/).filter(Boolean).every(t=>hay.includes(t));
 }
 
@@ -1376,7 +1545,7 @@ function segmentItems(){
     }
     case 'all':
     default: {
-      if (S.filter!=='all') items = items.filter(h=>h.status===S.filter);
+      if (S.filter!=='all') items = items.filter(h=>effStatus(h)===S.filter);
       return items.sort(sortChrono);
     }
   }
@@ -1384,6 +1553,7 @@ function segmentItems(){
 
 // ═══════════════ 6. RENDER ═══════════════
 function renderAll(){
+  recompute();
   renderBadge(); renderBanners(); renderSeg(); renderAgenda();
   if (S.page==='files')    renderFiles();
   if (S.page==='stats')    renderStats();
@@ -1404,6 +1574,13 @@ function renderBanners(){
   const b = $('#banners'); let html='';
   if (S.swUpdate) {
     html += `<div class="banner">✨ Yeni sürüm hazır<button data-act="app:update">Yenile</button></div>`;
+  }
+  if (S.update) {
+    html += `<div class="banner">📲 Yeni uygulama sürümü: v${esc(S.update.version)}<button data-act="app:apk">İndir</button></div>`;
+  }
+  const sy = S.settings.sync;
+  if (NATIVE && sy && sy.uri && sy.lastErr) {
+    html += `<div class="banner warn">☁️ Drive eşitlemesi başarısız<button data-act="sync:fix">Bak</button></div>`;
   }
   if (!S.storageOk) {
     html += `<div class="banner warn">⚠️ Veri cihaza yazılamıyor<button data-act="backup:json">Yedek al</button></div>`;
@@ -1430,24 +1607,28 @@ function renderSeg(){
 }
 
 // ── Ajanda ──
-/** Tarihi geçmiş ama hâlâ "aktif" duruşmalar — işaretlenmeyi bekliyor. */
-function staleItems(){
-  const t = todayISO();
-  return S.hearings.filter(h=>h.date<t && h.status==='active').sort((a,b)=>sortChrono(b,a));
-}
-
+/* v9'daki "İşaret bekliyor" kutusu kaldırıldı: geçmiş duruşmalar için kullanıcıdan
+   Oldu/Ertelendi/Karar istenmez. Sonrası olan geçmiş kayıt zaten ertelenmiştir
+   (effStatus). Geçmiş kayıtlar Bugün / 7 Gün / Yaklaşan'da görünmez.            */
 function renderAgenda(){
   const el = $('#agenda');
   if (!S.hearings.length) { el.innerHTML = welcomeHTML(); return; }
 
   const items = segmentItems();
   let html = '';
-  if (!S.q && S.seg!=='all') html += staleHTML();
   if (!S.q && S.seg==='week') html += stripHTML();
   html += items.length ? listHTML(items) : emptyHTML();
 
   el.innerHTML = html;
   bindSwipe(el);
+}
+/** "Tümü"nde liste en eskiden başlar; açılışta bugüne kaydır. */
+function scrollToToday(){
+  const t = todayISO();
+  const sep = $$('#agenda .daysep').find(d=>d.id.slice(2) >= t);
+  if (!sep) return;
+  const y = sep.getBoundingClientRect().top + window.scrollY - 118;
+  window.scrollTo({top: Math.max(0,y)});
 }
 
 function listHTML(items){
@@ -1474,39 +1655,13 @@ function listHTML(items){
   return html;
 }
 
-/** Koridor jesti: geçmiş kaydı üç dokunuştan biriyle kapat. */
-function staleHTML(){
-  const st = staleItems();
-  if (!st.length) return '';
-  const show = st.slice(0,6);
-  return `<div class="stale">
-    <div class="stale-h">⏳ İşaret bekliyor <span>${st.length} duruşma</span></div>
-    ${show.map(h=>`<div class="stale-r">
-      <div class="stale-top">
-        <span class="stale-d">${esc(fmtNum(h.date))}</span>
-        <div class="stale-c sel">${esc(h.court||h.file||'—')}
-          <div class="stale-f">${h.file?'📁 '+esc(h.file)+' · ':''}${esc(h.time)}</div>
-        </div>
-      </div>
-      <div class="stale-b">
-        <button class="b-done" data-act="st:done" data-id="${esc(h.id)}">✅ Oldu</button>
-        <button class="b-post" data-act="postpone" data-id="${esc(h.id)}">⏸️ Ertelendi</button>
-        <button class="b-dec"  data-act="st:decided" data-id="${esc(h.id)}">⚖️ Karar</button>
-      </div>
-    </div>`).join('')}
-    ${st.length>show.length
-      ? `<div class="stale-r" style="text-align:center;font-size:12px;color:var(--text-3);font-weight:700">
-           +${st.length-show.length} kayıt daha — “Tümü” sekmesinde</div>` : ''}
-  </div>`;
-}
-
 /** 14 günlük yoğunluk şeridi — haftayı tek bakışta gör. */
 function stripHTML(){
   const t = todayISO();
   let out='';
   for (let i=0;i<14;i++){
     const iso = addDays(t,i);
-    const day = S.hearings.filter(h=>h.date===iso && h.status!=='decided');
+    const day = S.hearings.filter(h=>h.date===iso && (h.status==='active' || h.status==='done'));
     const types = [...new Set(day.map(h=>h.type))].slice(0,4);
     const d = parseD(iso);
     const cls = ['sd'];
@@ -1525,7 +1680,8 @@ function stripHTML(){
 function rowHTML(h){
   const [rel, relCls] = relLabel(h.date);
   const T = TYPES[h.type];
-  return `<div class="hrow s-${h.status}" data-id="${esc(h.id)}">
+  const st = effStatus(h);
+  return `<div class="hrow s-${st}" data-id="${esc(h.id)}">
     <div class="swipe-bg"><span class="sw-l">✅ Tamamlandı</span><span class="sw-r">⏸️ Ertele</span></div>
     <div class="hrow-in t-${h.type}" data-act="open" data-id="${esc(h.id)}">
       <div class="h-time">${esc(h.time)}</div>
@@ -1540,13 +1696,28 @@ function rowHTML(h){
       </div>
       <div class="h-tail">
         ${rel ? `<span class="pill ${relCls}">${esc(rel)}</span>` : ''}
-        <span class="stdot ${h.status}" title="${esc(STATUS[h.status].label)}"></span>
+        <span class="stdot ${st}" title="${esc(DSTATUS[st].label)}"></span>
       </div>
     </div>
   </div>`;
 }
 
 function welcomeHTML(){
+  if (NATIVE) return `<div class="welcome">
+    <h2>👋 Hoş geldiniz</h2>
+    <p>Uygulama yeni kuruldu, içinde henüz kayıt yok. Verileriniz telefondaki
+       tarayıcı sürümünde veya bir yedek dosyasında duruyor — tek seferde aktarın.</p>
+    <button class="wbtn" data-act="sync:open">☁️ Drive'daki yedeği bağla (otomatik senkron)</button>
+    <button class="wbtn ghost" data-act="restore">📂 Yedek dosyasından bir kez aktar</button>
+    <button class="wbtn ghost" data-act="bulk">📋 Listeyi yapıştırarak ekle</button>
+    <button class="wbtn ghost" data-act="new">＋ İlk duruşmayı ekle</button>
+  </div>
+  <div class="empty">
+    <div class="empty-d"><b>Yedek dosyası yoksa:</b> tarayıcıdaki Turta'yı açın →
+    <b>Ayarlar → 📤 Yedeği Paylaş → Drive</b>. Sonra burada
+    <b>“Drive'daki yedeği bağla”</b> ile o dosyayı seçin. Bundan sonra her değişiklik
+    o dosyaya kendiliğinden yazılır.</div>
+  </div>`;
   return `<div class="welcome">
     <h2>👋 Hoş geldiniz</h2>
     <p>Henüz kayıt yok. Eski sürümden bir yedeğiniz varsa önce onu aktarın —
@@ -1621,27 +1792,38 @@ function renderCalendar(){
 }
 
 // ── Dosyalar ──
-function renderFiles(){
-  const el = $('#files');
-  const q = S.qf.trim();
+const NOFILE = '∅';
+/** Dosya anahtarı → kronolojik duruşmalar. Esas no'suz kayıtlar tek grupta. */
+function fileGroups(){
   const groups = new Map();
   S.hearings.forEach(h=>{
-    const key = h.file || '(dosya no yok)';
+    const key = fileKey(h) || NOFILE;
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key).push(h);
   });
-  let list = [...groups.entries()];
+  groups.forEach(arr=>arr.sort(sortChrono));
+  return groups;
+}
+function groupArr(key){ return fileGroups().get(key) || []; }
+function groupTitle(key, arr){
+  if (key===NOFILE) return '(dosya no yok)';
+  return arr[arr.length-1].file;
+}
+
+function renderFiles(){
+  const el = $('#files');
+  const q = S.qf.trim();
+  let list = [...fileGroups().entries()];
   if (q) list = list.filter(([k,arr]) =>
-    fold(k).includes(fold(q)) || arr.some(h=>searchMatch(h,q)));
+    fold(groupTitle(k,arr)).includes(fold(q)) || arr.some(h=>searchMatch(h,q)));
 
   const t = todayISO();
-  list.forEach(([,arr])=>arr.sort(sortChrono));
+  const nextOf = arr => arr.find(h=>h.date>=t && h.status==='active');
   list.sort((a,b)=>{
-    const na = a[1].find(h=>h.date>=t && h.status==='active');
-    const nb = b[1].find(h=>h.date>=t && h.status==='active');
+    const na = nextOf(a[1]), nb = nextOf(b[1]);
     if (na && !nb) return -1;
     if (!na && nb) return 1;
-    if (na && nb) return na.date.localeCompare(nb.date);
+    if (na && nb) return (na.date+na.time).localeCompare(nb.date+nb.time);
     return b[1][b[1].length-1].date.localeCompare(a[1][a[1].length-1].date);
   });
 
@@ -1651,17 +1833,24 @@ function renderFiles(){
     return;
   }
 
-  el.innerHTML = list.map(([file, arr])=>{
-    const next = arr.find(h=>h.date>=t && h.status==='active');
+  /* Yaklaşan duruşması olan dosyalar her zaman görünür. Olmayanlar (karara çıkmış,
+     yeni günü henüz listede olmayan) ayrı bir "kapanan dosyalar" bölümü yapılmaz;
+     tek satırlık bir düğmenin arkasında durur. Aramada hepsi görünür.            */
+  const active = list.filter(([,arr])=>nextOf(arr));
+  const idle   = list.filter(([,arr])=>!nextOf(arr));
+  const showIdle = !!q || S.showIdleFiles || !active.length;
+
+  const card = ([key, arr], isIdle)=>{
+    const next = nextOf(arr);
     const last = arr[arr.length-1];
     const courts = [...new Set(arr.map(h=>h.court).filter(Boolean))];
-    const client = (arr.find(h=>h.client)||{}).client || '';
-    const stCls = next ? 'active' : (arr.some(h=>h.status==='decided') ? 'decided' : 'done');
-    return `<div class="fgroup">
-      <button class="fg-head" data-act="file:open" data-f="${esc(file)}">
+    const client = (arr.slice().reverse().find(h=>h.client)||{}).client || '';
+    const stCls = next ? 'active' : effStatus(last);
+    return `<div class="fgroup${isIdle?' idle':''}">
+      <button class="fg-head" data-act="file:open" data-k="${esc(key)}">
         <div class="fg-main sel">
-          <div class="fg-no num">📁 ${esc(file)}</div>
-          <div class="fg-sub">${esc(courts[0]||'—')}${courts.length>1?` +${courts.length-1}`:''}${client?` · 👤 ${esc(client)}`:''}</div>
+          <div class="fg-no num">📁 ${esc(groupTitle(key,arr))}</div>
+          <div class="fg-sub">${esc(courts[courts.length-1]||'—')}${client?` · 👤 ${esc(client)}`:''}</div>
           <div class="fg-sub">${arr.length} duruşma · son: ${esc(fmtNum(last.date))}</div>
         </div>
         <div class="fg-right">
@@ -1670,7 +1859,15 @@ function renderFiles(){
         </div>
       </button>
     </div>`;
-  }).join('');
+  };
+
+  let html = active.map(g=>card(g,false)).join('');
+  if (idle.length) {
+    if (showIdle) html += idle.map(g=>card(g,true)).join('');
+    if (!q && active.length) html += `<button class="idle-toggle" data-act="files:idle">
+      ${S.showIdleFiles ? '▴ Gizle' : `▾ Yaklaşan duruşması olmayan ${idle.length} dosya`}</button>`;
+  }
+  el.innerHTML = html;
 }
 
 // ── Özet ──
@@ -1681,9 +1878,9 @@ function renderStats(){
   const ym = t.slice(0,7);
   const nextYm = addMonths(t,1).slice(0,7);
   const byType = {}; Object.keys(TYPES).forEach(k=>byType[k]=0);
-  const byStatus = {}; Object.keys(STATUS).forEach(k=>byStatus[k]=0);
-  H.forEach(h=>{ byType[h.type]=(byType[h.type]||0)+1; byStatus[h.status]++; });
-  const files = new Set(H.map(h=>h.file).filter(Boolean));
+  const byStatus = {}; Object.keys(DSTATUS).forEach(k=>byStatus[k]=0);
+  H.forEach(h=>{ byType[h.type]=(byType[h.type]||0)+1; byStatus[effStatus(h)]++; });
+  const files = new Set(H.map(fileKey).filter(Boolean)).size;
   const maxType = Math.max(1, ...Object.values(byType));
 
   const conflicts = findConflicts();
@@ -1695,7 +1892,7 @@ function renderStats(){
       <div class="scard" style="border-left-color:var(--st-active)"><b>${upcoming.length}</b><span>📅 Yaklaşan aktif</span></div>
       <div class="scard" style="border-left-color:var(--primary)"><b>${H.filter(h=>h.date.startsWith(ym)).length}</b><span>📆 Bu ay</span></div>
       <div class="scard" style="border-left-color:var(--accent)"><b>${H.filter(h=>h.date.startsWith(nextYm)).length}</b><span>🗓️ Gelecek ay</span></div>
-      <div class="scard" style="border-left-color:var(--text-3)"><b>${files.size}</b><span>📁 Dosya</span></div>
+      <div class="scard" style="border-left-color:var(--text-3)"><b>${files}</b><span>📁 Dosya</span></div>
       <div class="scard" style="border-left-color:var(--st-decided)"><b>${byStatus.decided}</b><span>⚖️ Karar verildi</span></div>
       <div class="scard" style="border-left-color:var(--st-postponed)"><b>${byStatus.postponed}</b><span>⏸️ Ertelendi</span></div>
     </div>
@@ -1774,7 +1971,23 @@ function renderSettings(){
   const gap = st.lastBackupDate ? dayDiff(todayISO(), st.lastBackupDate) : null;
   const chg = st.changesSinceBackup || 0;
 
-  $('#settings').innerHTML = `
+  const appSect = NATIVE ? `
+    <div class="sect">
+      <div class="sect-t">📲 Uygulama</div>
+      <div class="note ok">✅ Android uygulaması — internetsiz çalışır, bildirimler uygulama
+        kapalıyken de gelir.</div>
+      ${S.update ? `<button class="item" data-act="app:apk"><div class="item-main">
+        <div class="item-l" style="color:var(--success)">⬇️ Yeni sürüm: v${esc(S.update.version)}</div>
+        <div class="item-d">İndirip kurun; eskisinin üzerine kurulur, veriler korunur</div></div>
+        <span class="item-v">📲</span></button>` : ''}
+      <div class="item"><div class="item-main"><div class="item-l">Sürüm</div></div><div class="item-v">v${APP_VERSION}</div></div>
+      <div class="item"><div class="item-main"><div class="item-l">Toplam kayıt</div></div>
+        <div class="item-v num">${S.hearings.length}</div></div>
+      <button class="item" data-act="app:checkapk"><div class="item-main">
+        <div class="item-l">Güncellemeyi Denetle</div>
+        <div class="item-d">GitHub'daki son sürümle karşılaştırır (yalnızca sürüm numarası sorulur;
+          hiçbir veri gönderilmez)</div></div><span class="item-v">🔄</span></button>
+    </div>` : `
     <div class="sect">
       <div class="sect-t">📲 Uygulama</div>
       ${installed
@@ -1788,6 +2001,11 @@ function renderSettings(){
           : `<div class="note bad">⚠️ Bu sayfa <b>${esc(location.protocol)}</b> üzerinden açılmış.
                Kurulum ve çevrimdışı çalışma yalnızca <b>https://</b> adresinde mümkündür.
                Uygulamayı GitHub Pages adresinden açın.</div>`}
+      <button class="item" data-act="app:apk"><div class="item-main">
+        <div class="item-l">📲 Android Uygulamasını İndir (APK)</div>
+        <div class="item-d">Uygulama kapalıyken de duruşmadan önce sesli bildirim ve Drive
+          senkronu yalnızca Android uygulamasında var. Verinizi taşımak için önce
+          <b>📤 Yedeği Paylaş → Drive</b>.</div></div><span class="item-v">⬇️</span></button>
       <div class="item"><div class="item-main"><div class="item-l">Sürüm</div></div><div class="item-v">v${APP_VERSION}</div></div>
       <div class="item"><div class="item-main"><div class="item-l">Çevrimdışı önbellek</div>
         <div class="item-d">${swOn?'Etkin — internetsiz de açılır':'Kapalı'}</div></div>
@@ -1797,7 +2015,9 @@ function renderSettings(){
       <button class="item" data-act="app:refresh"><div class="item-main">
         <div class="item-l">Güncellemeyi Denetle</div>
         <div class="item-d">Önbelleği tazeler ve sayfayı yeniler</div></div><span class="item-v">🔄</span></button>
-    </div>
+    </div>`;
+
+  $('#settings').innerHTML = appSect + notifSectHTML(notif) + `
 
     <div class="sect">
       <div class="sect-t">🎨 Görünüm</div>
@@ -1813,8 +2033,11 @@ function renderSettings(){
 
     <div class="sect">
       <div class="sect-t">🔒 Gizlilik</div>
-      <div class="note">Duruşma verisi <b>yalnızca bu cihazda</b> saklanır; hiçbir sunucuya
-        gönderilmez. Uygulamanın kodu internetten gelir, verisi gelmez.</div>
+      <div class="note">${NATIVE
+        ? `Duruşma verisi <b>bu telefonda</b> saklanır. Drive senkronunu açtıysanız ayrıca
+           <b>sizin seçtiğiniz</b> Drive dosyasına yazılır — başka hiçbir yere gönderilmez.`
+        : `Duruşma verisi <b>yalnızca bu cihazda</b> saklanır; hiçbir sunucuya
+           gönderilmez. Uygulamanın kodu internetten gelir, verisi gelmez.`}</div>
       <button class="item" data-act="pin:set"><div class="item-main">
         <div class="item-l">Açılış Kilidi (PIN)</div>
         <div class="item-d">${st.pin?'Açık — uygulama açılışta PIN sorar':'Kapalı'}</div></div>
@@ -1824,12 +2047,18 @@ function renderSettings(){
         <div class="item-d">Verinin saklandığı yer ve neyin sildiği</div></div><span class="item-v">ℹ️</span></button>
     </div>
 
+    ${syncSectHTML()}
+
     <div class="sect">
       <div class="sect-t">💾 Veri Güvenliği</div>
-      <div class="note bad">⚠️ Chrome'da <b>“Gezinme verilerini temizle → Çerezler ve site
+      ${NATIVE
+        ? `<div class="note ${st.sync&&st.sync.uri?'':'bad'}">${st.sync&&st.sync.uri
+            ? '✅ Drive senkronu açık: her değişiklik Drive dosyasına yazılıyor. Uygulama silinse veya telefon değişse bile o dosyayı yeniden bağlayarak her şey geri gelir.'
+            : '⚠️ Uygulamayı kaldırırsanız veya telefonu sıfırlarsanız <b>bu telefondaki veri silinir</b>. Yukarıdan <b>Drive senkronunu</b> açın ya da düzenli yedek alın.'}</div>`
+        : `<div class="note bad">⚠️ Chrome'da <b>“Gezinme verilerini temizle → Çerezler ve site
         verileri”</b> dediğinizde bu uygulamanın <b>tüm verisi silinir</b> — cihaz içi kalıcı
         yedek dahil — ve geri getirilemez. Uygulamayı kaldırmak da aynı sonucu verir.
-        Tek koruma, tarayıcının dışında duran bir yedek dosyasıdır.</div>
+        Tek koruma, tarayıcının dışında duran bir yedek dosyasıdır.</div>`}
       ${gap===null
         ? `<div class="note warn">Henüz hiç yedek alınmadı.</div>`
         : gap>=(st.backupEveryDays||7) ? `<div class="note warn">⚠️ Son yedek ${gap} gün önce${chg?` · ${chg} değişiklik yedeklenmedi`:''}</div>`
@@ -1839,8 +2068,9 @@ function renderSettings(){
         <div class="item-d">Drive, WhatsApp, e-posta — telefon dışında durur</div></div><span class="item-v">📤</span></button>
       <button class="item" data-act="backup:json"><div class="item-main">
         <div class="item-l">Yedek Al (JSON)</div>
-        <div class="item-d">İndirilenler klasörüne kaydeder. Chrome temizliği indirilmiş
-          dosyaları silmez, ama telefon kaybolursa yedek de gider.</div></div><span class="item-v">⬇️</span></button>
+        <div class="item-d">${NATIVE
+          ? 'İndirilenler › Turta klasörüne kaydeder. Uygulama silinse de dosya kalır, ama telefon kaybolursa yedek de gider.'
+          : 'İndirilenler klasörüne kaydeder. Chrome temizliği indirilmiş dosyaları silmez, ama telefon kaybolursa yedek de gider.'}</div></div><span class="item-v">⬇️</span></button>
       <button class="item" data-act="backup:every"><div class="item-main">
         <div class="item-l">Hatırlatma Sıklığı</div>
         <div class="item-d">Ya da 20 değişiklikte bir</div></div>
@@ -1865,9 +2095,11 @@ function renderSettings(){
 
     <div class="sect">
       <div class="sect-t">🗓️ Telefon Takvimi</div>
-      <div class="note">Uygulama kapalıyken de alarm çalması için tek yol budur.
+      <div class="note">${NATIVE
+        ? 'İsteğe bağlı: uygulamanın kendi bildirimleri zaten çalışır. Duruşmaları ayrıca Google Takvim\'de de görmek isterseniz: duruşmaya dokunun → <b>Takvime</b>.'
+        : `Uygulama kapalıyken de alarm çalması için (Android uygulaması kurulu değilse) tek yol budur.
         <b>Asıl yöntem tek tek aktarmadır:</b> duruşmaya dokunun → <b>Takvime</b>.
-        Google Takvim açılır, tek dokunuşla kaydedersiniz.</div>
+        Google Takvim açılır, tek dokunuşla kaydedersiniz.`}</div>
       <button class="item" data-act="ics:all"><div class="item-main">
         <div class="item-l">Toplu .ics İndir</div>
         <div class="item-d">İlk kurulum için. Her kaydın sabit kimliği var; yeniden içe
@@ -1900,16 +2132,6 @@ function renderSettings(){
     </div>
 
     <div class="sect">
-      <div class="sect-t">🔔 Bildirim</div>
-      <div class="note warn">Bu bildirim yalnızca <b>uygulama açıkken</b> çalışır.
-        Kapalıyken de uyarı almak için yukarıdaki takvim aktarımını kullanın.</div>
-      <button class="item" data-act="notif"><div class="item-main">
-        <div class="item-l">Uygulama İçi Hatırlatma</div>
-        <div class="item-d">Duruşmaya 30 dk kala · izin durumu: ${esc(notif)}</div></div>
-        <div class="toggle${st.notifications && notif==='granted' ? ' on':''}"></div></button>
-    </div>
-
-    <div class="sect">
       <div class="sect-t">↩️ Geri Alma</div>
       <button class="item" data-act="undo"><div class="item-main">
         <div class="item-l">Son İşlemi Geri Al</div>
@@ -1921,6 +2143,130 @@ function renderSettings(){
       <button class="item danger" data-act="wipe"><div class="item-main">
         <div class="item-l">Tüm Verileri Sil</div>
         <div class="item-d">Geri alınamaz — önce yedek alın</div></div><span class="item-v">🗑️</span></button>
+    </div>`;
+}
+
+function soundOf(id){ return SOUNDS.find(s=>s.id===id) || SOUNDS[0]; }
+function relTime(ts){
+  if (!ts) return '—';
+  const m = Math.round((Date.now()-ts)/60000);
+  if (m<1) return 'az önce';
+  if (m<60) return m+' dk önce';
+  if (m<1440) return Math.round(m/60)+' sa önce';
+  return fmtNum(toISO(new Date(ts)));
+}
+
+function notifSectHTML(webPerm){
+  const st = S.settings, snd = soundOf(st.notifySound), lead = st.notifyLead||30;
+  const common = `
+      <button class="item" data-act="notif:lead"><div class="item-main">
+        <div class="item-l">Ne Kadar Önce</div>
+        <div class="item-d">Duruşma saatinden önce</div></div>
+        <div class="item-v">${lead} dk önce</div></button>
+      <button class="item" data-act="notif:sound"><div class="item-main">
+        <div class="item-l">Bildirim Sesi</div>
+        <div class="item-d">5 kısa ses — dinleyip seçin</div></div>
+        <div class="item-v">${snd.emoji} ${esc(snd.label)}</div></button>`;
+
+  if (!NATIVE) return `
+    <div class="sect">
+      <div class="sect-t">🔔 Bildirim</div>
+      <div class="note warn">Tarayıcı sürümünde bildirim yalnızca <b>uygulama açıkken</b> çalışır.
+        Uygulama kapalıyken de gelmesi için <b>Android uygulamasını</b> kurun (yukarıda).</div>
+      <button class="item" data-act="notif"><div class="item-main">
+        <div class="item-l">Uygulama İçi Hatırlatma</div>
+        <div class="item-d">Duruşmaya ${lead} dk kala · izin durumu: ${esc(webPerm)}</div></div>
+        <div class="toggle${st.notifications && webPerm==='granted' ? ' on':''}"></div></button>
+      ${common}
+    </div>`;
+
+  const I = S.notifInfo || {};
+  let note;
+  if (!st.notifications)
+    note = `<div class="note">Kapalı. Açınca her yaklaşan duruşma için <b>${lead} dk önce</b>
+      seçtiğiniz sesle bildirim gelir — uygulama kapalıyken ve telefon kilitliyken de.</div>`;
+  else if (I.perm && I.perm!=='granted')
+    note = `<div class="note bad">⚠️ Android bildirim izni kapalı. Aşağıdan
+      <b>Android Bildirim Ayarları</b>'nı açıp izin verin.</div>`;
+  else if (I.err)
+    note = `<div class="note bad">⚠️ Bildirimler planlanamadı: ${esc(I.err)}</div>`;
+  else
+    note = `<div class="note ok">✅ ${I.count||0} duruşma için bildirim planlandı${I.first
+      ? ` · ilki ${esc(fmtShort(I.first.date))} ${esc(I.first.time)}` : ''}.</div>`;
+
+  return `
+    <div class="sect">
+      <div class="sect-t">🔔 Duruşma Bildirimi</div>
+      ${note}
+      ${st.notifications && I.exact==='denied' ? `<button class="item" data-act="notif:exact"><div class="item-main">
+        <div class="item-l" style="color:var(--warning)">⏰ Tam zamanında çalsın</div>
+        <div class="item-d">“Alarmlar ve hatırlatıcılar” izni kapalı; bildirim birkaç dakika
+          gecikebilir. Dokunup izin verin.</div></div><span class="item-v">›</span></button>` : ''}
+      <button class="item" data-act="notif"><div class="item-main">
+        <div class="item-l">Duruşma Bildirimleri</div>
+        <div class="item-d">Uygulama kapalıyken de çalışır · yalnızca aktif, yaklaşan duruşmalar</div></div>
+        <div class="toggle${st.notifications ? ' on':''}"></div></button>
+      ${common}
+      <button class="item" data-act="notif:test"><div class="item-main">
+        <div class="item-l">Deneme Bildirimi</div>
+        <div class="item-d">5 saniye sonra seçili sesle bir deneme bildirimi gelir</div></div>
+        <span class="item-v">🧪</span></button>
+      ${I.battery===false ? `<button class="item" data-act="notif:battery"><div class="item-main">
+        <div class="item-l">🔋 Pil Kısıtlamasını Kaldır <b style="color:var(--success)">(önerilir)</b></div>
+        <div class="item-d">Xiaomi, Samsung, Huawei, Oppo gibi telefonlarda pil tasarrufu
+          bildirimleri geciktirebilir veya engelleyebilir.</div></div><span class="item-v">›</span></button>` : ''}
+      <button class="item" data-act="notif:settings"><div class="item-main">
+        <div class="item-l">Android Bildirim Ayarları</div>
+        <div class="item-d">İzin, kilit ekranı görünürlüğü, rahatsız etme modu</div></div>
+        <span class="item-v">⚙️</span></button>
+    </div>`;
+}
+
+function syncSectHTML(){
+  if (!NATIVE) return `
+    <div class="sect">
+      <div class="sect-t">☁️ Drive</div>
+      <div class="note">Otomatik Drive senkronu <b>Android uygulamasında</b>. Tarayıcı sürümünde
+        Drive'a yedek göndermek için aşağıdaki <b>📤 Yedeği Paylaş → Drive</b>'ı kullanın;
+        Android uygulamasında bu dosyayı bağlayınca verileriniz oraya geçer.</div>
+    </div>`;
+  const sy = S.settings.sync;
+  if (sy && sy.uri) {
+    const bad = !!sy.lastErr;
+    return `
+    <div class="sect">
+      <div class="sect-t">☁️ Drive Senkronu</div>
+      <div class="note ${bad?'bad':'ok'}">${bad
+        ? `⚠️ Son eşitleme başarısız: ${esc(sy.lastErr)}`
+        : `☁️ Bağlı: <b>${esc(sy.name||'senkron dosyası')}</b> · son eşitleme ${esc(relTime(sy.lastOk))}`}
+        ${sy.persisted===false ? '<br>⚠️ Bu konum kalıcı izin vermedi; telefon yeniden başlayınca dosyayı tekrar seçmeniz gerekebilir.' : ''}</div>
+      <button class="item" data-act="sync:now"><div class="item-main">
+        <div class="item-l">Şimdi Eşitle</div>
+        <div class="item-d">Normalde gerek yok: her değişiklikten birkaç saniye sonra ve
+          açılışta kendiliğinden eşitlenir</div></div><span class="item-v">🔄</span></button>
+      ${bad ? `<button class="item" data-act="sync:open"><div class="item-main">
+        <div class="item-l">Dosyayı Yeniden Seç</div>
+        <div class="item-d">İzin düştüyse aynı dosyayı tekrar seçin</div></div><span class="item-v">📂</span></button>` : ''}
+      <button class="item" data-act="sync:unlink"><div class="item-main">
+        <div class="item-l">Bağlantıyı Kaldır</div>
+        <div class="item-d">Drive'daki dosya silinmez; yalnızca eşitleme durur</div></div><span class="item-v">⛔</span></button>
+    </div>`;
+  }
+  return `
+    <div class="sect">
+      <div class="sect-t">☁️ Drive Senkronu</div>
+      <div class="note">Verilerinizi Google Drive'daki <b>tek bir dosyayla</b> otomatik eşitler:
+        her değişiklik birkaç saniye içinde dosyaya yazılır, açılışta dosyadan okunur.
+        Google hesabıyla giriş gerekmez — dosyayı Android'in dosya seçicisiyle siz seçersiniz.
+        Telefon değişirse ya da uygulama silinirse aynı dosyayı bağlayınca her şey geri gelir.</div>
+      <button class="item" data-act="sync:create"><div class="item-main">
+        <div class="item-l">☁️ Drive'da Yeni Senkron Dosyası Oluştur</div>
+        <div class="item-d">Açılan pencerede sol menüden <b>Drive</b>'ı seçin, istediğiniz
+          klasöre <b>Kaydet</b> deyin</div></div><span class="item-v">＋</span></button>
+      <button class="item" data-act="sync:open"><div class="item-main">
+        <div class="item-l">📂 Var Olan Dosyayı Bağla</div>
+        <div class="item-d">Başka telefondaki senkron dosyası ya da tarayıcı sürümünden Drive'a
+          gönderdiğiniz yedek. Kayıtlar birleştirilir, hiçbiri silinmez.</div></div><span class="item-v">›</span></button>
     </div>`;
 }
 
@@ -1959,8 +2305,11 @@ function confirmSheet({title, body, ok='Evet', danger=false}){
          <button class="btn btn-2" id="cf-no">Vazgeç</button>
        </div>`,
       sh=>{
-        sh.querySelector('#cf-ok').onclick = ()=>{ closeSheet(); res(true); };
-        sh.querySelector('#cf-no').onclick = ()=>{ closeSheet(); res(false); };
+        /* Önce çöz, sonra kapat. v9'da sıra tersti: closeSheet() temizlik
+           fonksiyonuyla sözü false ile çözüyor, ardından gelen res(true) yok
+           sayılıyordu → Geri Yükle, Birleştir, Sil, Tümünü Sil hiç çalışmıyordu. */
+        sh.querySelector('#cf-ok').onclick = ()=>{ res(true);  closeSheet(); };
+        sh.querySelector('#cf-no').onclick = ()=>{ res(false); closeSheet(); };
         return ()=>res(false);
       });
   });
@@ -1993,34 +2342,38 @@ function openDetail(id){
       <div class="dv"><div class="dv-k">Dosya No</div><div class="dv-v num">${esc(h.file||'—')}</div></div>
       ${h.client?`<div class="dv"><div class="dv-k">Müvekkil</div><div class="dv-v">${esc(h.client)}</div></div>`:''}
       <div class="dv"><div class="dv-k">Konum</div><div class="dv-v">${T.emoji} ${esc(T.label)}</div></div>
-      <div class="dv"><div class="dv-k">Durum</div><div class="dv-v">${STATUS[h.status].emoji} ${esc(STATUS[h.status].label)}</div></div>
+      <div class="dv"><div class="dv-k">Durum</div><div class="dv-v">${DSTATUS[effStatus(h)].emoji} ${esc(DSTATUS[effStatus(h)].label)}${
+        h.status==='active' && effStatus(h)==='postponed' ? ' <span style="font-weight:500;color:var(--text-3)">(sonraki duruşmaya göre)</span>' : ''}</div></div>
       ${h.note?`<div class="dv"><div class="dv-k">Not</div><div class="dv-v" style="font-weight:500">${esc(h.note)}</div></div>`:''}
       ${chain.length>1?`<div style="margin-top:16px">
         <div class="panel-t">🔗 Dosya geçmişi (${chain.length} duruşma)</div>
-        <div class="tl">${chain.map(c=>`<div class="tl-i ${c.status}">
+        <div class="tl">${chain.map(c=>{ const cs=effStatus(c); return `<div class="tl-i ${cs}">
           <div class="tl-d">${esc(fmtNum(c.date))} · ${esc(c.time)}${c.id===h.id?' ← şu an':''}</div>
-          <div class="tl-m">${STATUS[c.status].emoji} ${esc(STATUS[c.status].label)}${c.note?' · '+esc(c.note):''}</div>
-        </div>`).join('')}</div></div>`:''}
+          <div class="tl-m">${DSTATUS[cs].emoji} ${esc(DSTATUS[cs].label)}${c.note?' · '+esc(c.note):''}</div>
+        </div>`; }).join('')}</div></div>`:''}
     </div>
     <div class="sheet-foot">
       <button class="btn btn-p" data-act="postpone" data-id="${esc(h.id)}">⏸️ Başka güne ertele</button>
     </div>`);
 }
-/** Aynı dosya numarasına ait duruşmaları kronolojik verir. */
+/** Aynı dosyaya (esas no + mahkeme) ait duruşmaları kronolojik verir. */
 function chainOf(h){
-  if (!h.file) return [h];
-  return S.hearings.filter(x=>x.file===h.file).sort(sortChrono);
+  const k = fileKey(h);
+  if (!k) return [h];
+  return S.hearings.filter(x=>fileKey(x)===k).sort(sortChrono);
 }
 
 // ── Dosya detayı ──
-function openFile(file){
-  const arr = S.hearings.filter(h=>(h.file||'(dosya no yok)')===file).sort(sortChrono);
+function openFile(key){
+  const arr = groupArr(key);
   if (!arr.length) return;
+  const file = groupTitle(key, arr);
   const t = todayISO();
   const next = arr.find(h=>h.date>=t && h.status==='active');
   const courts = [...new Set(arr.map(h=>h.court).filter(Boolean))];
-  const client = (arr.find(h=>h.client)||{}).client || '';
-  const link = (S.settings.fileLinks||{})[file] || '';
+  const client = (arr.slice().reverse().find(h=>h.client)||{}).client || '';
+  const link = (S.settings.fileLinks||{})[key] || '';
+  const hasNo = key!==NOFILE;
 
   openSheet(
     sheetHead('📁 '+file, `${arr.length} duruşma${client?' · '+client:''}`) +
@@ -2029,24 +2382,24 @@ function openFile(file){
             :`<div class="hint ok">✅ Bekleyen aktif duruşma yok</div>`}
       <div class="acts">
         ${next?`<button class="act" data-act="postpone" data-id="${esc(next.id)}"><i>⏸️</i>Ertele</button>`
-              :`<button class="act" data-act="new:file" data-f="${esc(file)}"><i>＋</i>Yeni gün</button>`}
-        <button class="act" data-act="copy:file" data-f="${esc(file)}"><i>📋</i>Esas No</button>
+              :`<button class="act" data-act="new:file" data-k="${esc(key)}"><i>＋</i>Yeni gün</button>`}
+        ${hasNo?`<button class="act" data-act="copy:file" data-f="${esc(file)}"><i>📋</i>Esas No</button>`:''}
         ${link ? `<button class="act" data-act="link:open" data-u="${esc(link)}"><i>📂</i>Klasör</button>`
-               : `<button class="act" data-act="link:set" data-f="${esc(file)}"><i>🔗</i>Klasör ekle</button>`}
-        <button class="act" data-act="share:file" data-f="${esc(file)}"><i>📤</i>Paylaş</button>
+               : `<button class="act" data-act="link:set" data-k="${esc(key)}"><i>🔗</i>Klasör ekle</button>`}
+        <button class="act" data-act="share:file" data-k="${esc(key)}"><i>📤</i>Paylaş</button>
       </div>
       <div class="dv"><div class="dv-k">Mahkeme</div><div class="dv-v">${courts.map(esc).join('<br>')||'—'}</div></div>
       ${client?`<div class="dv"><div class="dv-k">Müvekkil</div><div class="dv-v">${esc(client)}</div></div>`:''}
       <div style="margin-top:14px"><div class="panel-t">🕘 Duruşma geçmişi</div>
-      <div class="tl">${arr.map(c=>`<div class="tl-i ${c.status}">
+      <div class="tl">${arr.map(c=>{ const cs=effStatus(c); return `<div class="tl-i ${cs}">
         <button style="text-align:left;width:100%" data-act="open" data-id="${esc(c.id)}">
           <div class="tl-d">${esc(fmtNum(c.date))} ${esc(DAYS_S[parseD(c.date).getDay()])} · ${esc(c.time)}</div>
-          <div class="tl-m">${STATUS[c.status].emoji} ${esc(STATUS[c.status].label)}${c.note?' · '+esc(c.note):''}</div>
-        </button></div>`).join('')}</div></div>
+          <div class="tl-m">${DSTATUS[cs].emoji} ${esc(DSTATUS[cs].label)}${c.note?' · '+esc(c.note):''}</div>
+        </button></div>`; }).join('')}</div></div>
     </div>
     <div class="sheet-foot">
-      <button class="btn btn-p" data-act="new:file" data-f="${esc(file)}">＋ Bu dosyaya duruşma ekle</button>
-      ${link?`<button class="btn btn-2" data-act="link:set" data-f="${esc(file)}">🔗 Klasör bağlantısını değiştir</button>`:''}
+      <button class="btn btn-p" data-act="new:file" data-k="${esc(key)}">＋ Bu dosyaya duruşma ekle</button>
+      ${link?`<button class="btn btn-2" data-act="link:set" data-k="${esc(key)}">🔗 Klasör bağlantısını değiştir</button>`:''}
     </div>`);
 }
 
@@ -2474,6 +2827,10 @@ function hearingText(h){
   ].filter(Boolean).join('\n');
 }
 async function shareText(title, text){
+  if (NATIVE) {     // Android WebView'da navigator.share yok
+    try { await nat('Share','share',{title, text, dialogTitle:title}); return; }
+    catch(e){ if (isCancel(e)) return; }
+  }
   try {
     if (navigator.share) { await navigator.share({title, text}); return; }
   } catch(e){ if (e && e.name==='AbortError') return; }
@@ -2488,8 +2845,9 @@ async function shareText(title, text){
   }
 }
 function shareRange(fromISO, toISO_, title){
+  // Yalnızca o gün gerçekten görülecekler: ertelenmiş eski tarih listeye girmesin
   const list = S.hearings
-    .filter(h=>h.date>=fromISO && h.date<=toISO_ && h.status!=='decided')
+    .filter(h=>h.date>=fromISO && h.date<=toISO_ && (h.status==='active' || h.status==='done'))
     .sort(sortChrono);
   if (!list.length) { toast('Bu aralıkta duruşma yok'); return; }
   let out = `⚖️ Av. Fuat DOBLAN — ${title}\n`;
@@ -2501,29 +2859,37 @@ function shareRange(fromISO, toISO_, title){
   shareText(title, out.trim());
 }
 
-function download(name, mime, content){
+/** Dosya indir. APK'da <a download> çalışmaz → İndirilenler/Turta'ya yerel kayıt.
+    true = kaydedildi, false = kullanıcı vazgeçti / başarısız. */
+async function download(name, mime, content){
+  if (NATIVE) return nativeSave(name, mime, content);
   const blob = new Blob([content], {type:mime});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href=url; a.download=name;
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(()=>URL.revokeObjectURL(url), 4000);
+  return true;
 }
-function backupPayload(){
+/** Yedek ve senkron dosyası aynı biçimdedir: biri diğerinin yerine geçebilir. */
+function backupPayload(pretty=true){
   return JSON.stringify({
     app:'Turta', appVersion:APP_VERSION,
     exportedAt:new Date().toISOString(),
+    deviceId:S.settings.deviceId,
     count:S.hearings.length,
-    settings:{adliTatil:S.settings.adliTatil, offDays:S.settings.offDays, theme:S.settings.theme},
+    settings:{adliTatil:S.settings.adliTatil, offDays:S.settings.offDays, theme:S.settings.theme,
+              fileLinks:S.settings.fileLinks},
+    tombstones:S.tomb,
     hearings:S.hearings
-  }, null, 2);
+  }, null, pretty?2:0) + '\n';
 }
-function markBackup(){
+function markBackup(silent){
   S.settings.lastBackupDate = todayISO();
   S.settings.changesSinceBackup = 0;
   S.settings.backupSnoozeUntil = null;
   saveSettings(); renderBanners();
-  if (S.page==='settings') renderSettings();
+  if (S.page==='settings' && !silent) renderSettings();
 }
 
 /* ── Yedek zamanlaması ──
@@ -2559,19 +2925,27 @@ function openBackupPrompt(d){
     sheetHead('💾 Yedek Zamanı', `${S.hearings.length} duruşma kaydı`) +
     `<div class="sheet-body">
       <div class="hint warn">${msg}</div>
-      <div class="hint bad">⚠️ Chrome'da <b>“Gezinme verilerini temizle”</b> yaparken
+      ${NATIVE
+        ? `<div class="hint bad">⚠️ Uygulamayı kaldırırsanız veya telefon sıfırlanırsa bu
+            telefondaki veri silinir.</div>
+           <div class="hint info">En iyisi <b>Drive senkronunu açmak</b>: bir kez dosya seçersiniz,
+            sonra her değişiklik kendiliğinden Drive'a yazılır ve bu uyarı bir daha çıkmaz.</div>`
+        : `<div class="hint bad">⚠️ Chrome'da <b>“Gezinme verilerini temizle”</b> yaparken
         <b>“Çerezler ve site verileri”</b> kutusu işaretliyse, bu uygulamanın verisi de
         silinir — cihaz içi kalıcı yedek dahil. Tarayıcının dışında bir kopya
         tutmazsanız geri getirilemez.</div>
       <div class="hint info">En güvenlisi <b>Drive'a göndermek</b>: telefon kaybolsa,
-        sıfırlansa veya Chrome temizlense bile dosya yerinde kalır.</div>
+        sıfırlansa veya Chrome temizlense bile dosya yerinde kalır.</div>`}
     </div>
     <div class="sheet-foot">
-      <button class="btn btn-ok" id="bk-share">📤 Drive'a / WhatsApp'a Gönder</button>
+      ${NATIVE ? `<button class="btn btn-ok" id="bk-sync">☁️ Drive Senkronunu Aç</button>` : ''}
+      <button class="btn ${NATIVE?'btn-2':'btn-ok'}" id="bk-share">📤 Drive'a / WhatsApp'a Gönder</button>
       <button class="btn btn-2" id="bk-dl">⬇️ Telefona İndir</button>
       <button class="btn btn-2" id="bk-later">Yarın hatırlat</button>
     </div>`,
   sh=>{
+    const sy = sh.querySelector('#bk-sync');
+    if (sy) sy.onclick = ()=>{ closeSheet(); syncCreate(); };
     sh.querySelector('#bk-share').onclick = async ()=>{ closeSheet(); await backupShare(); };
     sh.querySelector('#bk-dl').onclick    = ()=>{ closeSheet(); backupJSON(); };
     sh.querySelector('#bk-later').onclick = ()=>{
@@ -2588,14 +2962,19 @@ function openFirstRunWarning(){
   openSheet(
     sheetHead('🔐 Verileriniz nerede duruyor?', 'Bir kez okuyun — önemli') +
     `<div class="sheet-body">
-      <div class="hint ok">✅ Duruşma bilgileriniz <b>yalnızca bu telefonda</b> saklanır.
-        Hiçbir sunucuya gönderilmez, internete çıkmaz.</div>
-      <div class="hint bad">⚠️ Bunun bedeli şu: Chrome'da
+      <div class="hint ok">✅ Duruşma bilgileriniz <b>bu telefonda</b> saklanır.
+        Hiçbir sunucuya gönderilmez${NATIVE?'; yalnızca sizin seçtiğiniz Drive dosyasına yazılır (açarsanız)':', internete çıkmaz'}.</div>
+      ${NATIVE
+        ? `<div class="hint bad">⚠️ Uygulamayı kaldırırsanız veya telefonu sıfırlarsanız
+            telefondaki veri silinir.</div>
+           <div class="hint info">☁️ Çözüm: <b>Ayarlar → Drive Senkronu</b>. Bir kez dosya seçin;
+            sonra her şey kendiliğinden Drive'da da durur.</div>`
+        : `<div class="hint bad">⚠️ Bunun bedeli şu: Chrome'da
         <b>“Gezinme verilerini temizle → Çerezler ve site verileri”</b> dediğinizde
         <b>uygulamanın tüm verisi silinir</b> ve geri getirilemez.
         Uygulamayı kaldırmak veya telefonu sıfırlamak da aynı sonucu verir.</div>
       <div class="hint info">💾 Tek koruma düzenli yedektir. Uygulama size haftada bir
-        hatırlatacak; <b>Drive'a gönderin</b>, telefonda tutmayın.</div>
+        hatırlatacak; <b>Drive'a gönderin</b>, telefonda tutmayın.</div>`}
     </div>
     <div class="sheet-foot">
       <button class="btn btn-p" id="fw-ok">Anladım</button>
@@ -2607,14 +2986,23 @@ function openFirstRunWarning(){
     return null;
   });
 }
-function backupJSON(){
+async function backupJSON(){
   if (!S.hearings.length){ toast('Yedeklenecek kayıt yok'); return; }
-  download(`turta_yedek_${todayISO()}.json`, 'application/json', backupPayload());
-  markBackup(); toast('✅ Yedek indirildi');
+  const ok = await download(`turta_yedek_${todayISO()}.json`, 'application/json', backupPayload());
+  if (!ok) return;
+  markBackup(); if (!NATIVE) toast('✅ Yedek indirildi');
 }
 async function backupShare(){
   const content = backupPayload();
   const name = `turta_yedek_${todayISO()}.json`;
+  if (NATIVE) {
+    try {
+      if (await nativeShareFile(name, 'application/json', content, 'Turta yedeği')) {
+        markBackup(); toast('✅ Paylaşıldı');
+      }
+    } catch(e){ toast('❌ Paylaşılamadı: '+errMsg(e), 5000); }
+    return;
+  }
   try {
     const file = new File([content], name, {type:'application/json'});
     if (navigator.canShare && navigator.canShare({files:[file]})) {
@@ -2623,7 +3011,7 @@ async function backupShare(){
       return;
     }
   } catch(e){ if (e && e.name==='AbortError') return; }
-  download(name,'application/json',content);
+  await download(name,'application/json',content);
   markBackup();
   toast('İndirildi — dosyaya uzun basıp paylaşabilirsiniz', 5000);
 }
@@ -2671,7 +3059,7 @@ function buildICS(list){
     L.push(icsFold('SUMMARY:'+icsEsc('Duruşma — '+(h.court||h.file))));
     L.push(icsFold('LOCATION:'+icsEsc(TYPES[h.type].label)));
     L.push(icsFold('DESCRIPTION:'+icsEsc(desc)));
-    L.push('STATUS:'+(h.status==='active'?'CONFIRMED':'TENTATIVE'));
+    L.push('STATUS:'+(effStatus(h)==='active'?'CONFIRMED':'TENTATIVE'));
     L.push('BEGIN:VALARM','TRIGGER:-PT'+mins+'M','ACTION:DISPLAY',
            icsFold('DESCRIPTION:'+icsEsc('Duruşma: '+(h.court||h.file))),'END:VALARM');
     L.push('BEGIN:VALARM','TRIGGER:-P1D','ACTION:DISPLAY',
@@ -2681,10 +3069,10 @@ function buildICS(list){
   L.push('END:VCALENDAR');
   return L.join('\r\n')+'\r\n';
 }
-function exportICS(list, name){
+async function exportICS(list, name){
   if (!list.length){ toast('Aktarılacak duruşma yok'); return; }
-  download(name, 'text/calendar;charset=utf-8', buildICS(list));
-  toast('📆 İndirildi — dosyaya dokunup Takvim’e ekleyin', 5000);
+  const ok = await download(name, 'text/calendar', buildICS(list));
+  if (ok && !NATIVE) toast('📆 İndirildi — dosyaya dokunup Takvim’e ekleyin', 5000);
 }
 /** Google Takvim'de "etkinlik ekle" ekranını doldurarak açar. */
 function googleCalendar(h){
@@ -2701,7 +3089,7 @@ function googleCalendar(h){
              h.note?'Not: '+h.note:''].filter(Boolean).join('\n'),
     location:TYPES[h.type].label
   });
-  window.open('https://calendar.google.com/calendar/render?'+p.toString(), '_blank', 'noopener');
+  openExternal('https://calendar.google.com/calendar/render?'+p.toString());
 }
 
 // ── Veri gömülü HTML ──
@@ -2715,12 +3103,23 @@ async function downloadHTML(){
   }
   const json = JSON.stringify(S.hearings, null, 1);
   const out = html.replace(/const EMBEDDED_DATA = \[\];/, () => `const EMBEDDED_DATA = ${json};`);
-  download(`Turta_arsiv_${todayISO()}.html`, 'text/html;charset=utf-8', out);
-  toast('🌐 Arşiv dosyası indirildi');
+  const ok = await download(`Turta_arsiv_${todayISO()}.html`, 'text/html', out);
+  if (ok && !NATIVE) toast('🌐 Arşiv dosyası indirildi');
 }
 
 // ── İçe aktarma ──
-function pickFile(){
+/* APK'da WebView'ın dosya seçicisi ".json" süzgecini MIME türüne çeviriyor; Drive'daki
+   dosya farklı türde görünürse listede çıkmıyor. Bu yüzden APK'da sistem seçicisi. */
+async function pickFile(){
+  if (NATIVE) {
+    try {
+      const p = await nat('TurtaNative','syncPickOpen',{});
+      const r = await nat('TurtaNative','syncRead',{uri:p.uri});
+      const linked = S.settings.sync && S.settings.sync.uri===p.uri;
+      if (!linked) nat('TurtaNative','syncRelease',{uri:p.uri}).catch(()=>{});
+      return r.data;
+    } catch(e){ if (!isCancel(e)) toast('❌ '+errMsg(e), 5000); return null; }
+  }
   return new Promise(res=>{
     const inp = $('#filepick');
     inp.value='';
@@ -2738,37 +3137,78 @@ function pickFile(){
     inp.click();
   });
 }
-function parseBackup(text){
-  let j;
-  try { j = JSON.parse(text); } catch(e){ return null; }
-  const arr = Array.isArray(j) ? j : (Array.isArray(j.hearings) ? j.hearings : null);
-  if (!arr) return null;
-  return arr.map(normalize);
+/** Sonda artık kalmış JSON'u da okur (bazı bulut sağlayıcıları dosyayı kısaltmadan
+    üzerine yazar; uzun eski içerik yeni içeriğin arkasında kalabilir). */
+function parseJSONLenient(text){
+  const s = String(text||'').replace(/^﻿/,'').trim();
+  if (!s) return undefined;
+  try { return JSON.parse(s); } catch(e){}
+  // İlk tam üst düzey nesneyi/diziyi bul
+  const open = s[0], close = open==='{' ? '}' : open==='[' ? ']' : null;
+  if (!close) return null;
+  let depth=0, inStr=false, escp=false;
+  for (let i=0;i<s.length;i++){
+    const c=s[i];
+    if (inStr){ if (escp) escp=false; else if (c==='\\') escp=true; else if (c==='"') inStr=false; continue; }
+    if (c==='"') inStr=true;
+    else if (c===open) depth++;
+    else if (c===close && --depth===0){
+      try { return JSON.parse(s.slice(0,i+1)); } catch(e){ return null; }
+    }
+  }
+  return null;
 }
+/** → { arr, skipped, tomb, raw } ya da biçim tanınmazsa null. */
+function parseBackupFull(text){
+  const j = parseJSONLenient(text);
+  if (!j) return null;
+  const list = Array.isArray(j) ? j : (Array.isArray(j.hearings) ? j.hearings : null);
+  if (!list) return null;
+  const all = list.map(normalize);
+  const arr = all.filter(h=>h.date);
+  const tomb = (j && typeof j.tombstones==='object' && j.tombstones) ? j.tombstones : {};
+  return { arr, skipped: all.length-arr.length, tomb, raw:j };
+}
+function parseBackup(text){ const r = parseBackupFull(text); return r ? r.arr : null; }
+const skippedNote = n => n ? `<br><br>⚠️ <b>${n}</b> kayıt tarihi okunamadığı için atlanacak.` : '';
+
 async function doRestore(){
   const text = await pickFile(); if (text===null) return;
-  const arr = parseBackup(text);
-  if (!arr){ toast('❌ Dosya okunamadı veya biçim tanınmadı'); return; }
+  const P = parseBackupFull(text);
+  if (!P){ toast('❌ Dosya okunamadı veya biçim tanınmadı'); return; }
+  const arr = P.arr;
   const ok = await confirmSheet({
     title:'Geri Yükle',
     danger:true, ok:`${arr.length} kaydı yükle`,
     body:`Dosyada <b>${arr.length}</b> kayıt var.<br><br>
           Mevcut <b>${S.hearings.length}</b> kaydın <b>yerine</b> yazılacak.
-          Eklemek istiyorsanız “Birleştirerek İçe Aktar”ı kullanın.`
+          Eklemek istiyorsanız “Birleştirerek İçe Aktar”ı kullanın.${skippedNote(P.skipped)}`
   });
   if (!ok) return;
-  const before = S.hearings.slice();
-  S.hearings = arr;
-  pushUndo({label:'geri yükleme', puts:before, dels:arr.map(h=>h.id)});
-  persist(); renderAll();
+  replaceAll(arr, 'geri yükleme');
   toast(`✅ ${arr.length} kayıt yüklendi`);
+}
+/** Tüm veriyi değiştir; yeni kümede olmayanlar senkron için "silindi" işaretlenir. */
+function replaceAll(arr, label){
+  const before = S.hearings.slice();
+  const now = Date.now();
+  const keep = new Set(arr.map(h=>h.id));
+  tombstone(before.filter(h=>!keep.has(h.id)).map(h=>h.id));
+  S.hearings = arr.map(h=>({...h, updatedAt:now}));
+  S.hearings.forEach(h=>{ delete S.tomb[h.id]; });
+  pushUndo({label, puts:before, dels:arr.map(h=>h.id).filter(id=>!before.some(b=>b.id===id))});
+  persist(); renderAll();
 }
 async function doMerge(){
   const text = await pickFile(); if (text===null) return;
-  const arr = parseBackup(text);
-  if (!arr){ toast('❌ Dosya okunamadı veya biçim tanınmadı'); return; }
-  const keys = new Set(S.hearings.map(h=>`${h.date}|${h.time}|${fold(h.court)}|${fold(h.file)}`));
-  const fresh = arr.filter(h=>!keys.has(`${h.date}|${h.time}|${fold(h.court)}|${fold(h.file)}`));
+  const P = parseBackupFull(text);
+  if (!P){ toast('❌ Dosya okunamadı veya biçim tanınmadı'); return; }
+  const arr = P.arr;
+  const sig = h => `${h.date}|${h.time}|${courtKey(h.court)}|${fold(h.file)}`;
+  const keys = new Set(S.hearings.map(sig));
+  const ids = new Set(S.hearings.map(h=>h.id));
+  // Aynı kimlik = aynı kaydın başka sürümü → eklenmez (çift kayıt olmasın)
+  const fresh = arr.filter(h=>!keys.has(sig(h)) && !ids.has(h.id));
   if (!fresh.length){
     toast(`ℹ️ Yeni kayıt yok — ${arr.length} kaydın tamamı zaten var`, 5000);
     return;
@@ -2778,10 +3218,11 @@ async function doMerge(){
     body:`Dosyada <b>${arr.length}</b> kayıt var.<br>
           • Yeni eklenecek: <b>${fresh.length}</b><br>
           • Zaten mevcut: <b>${arr.length-fresh.length}</b><br><br>
-          Mevcut kayıtlarınıza dokunulmaz.`
+          Mevcut kayıtlarınıza dokunulmaz.${skippedNote(P.skipped)}`
   });
   if (!ok) return;
-  fresh.forEach(h=>{ h.id = uid(); });
+  /* Kimlikler korunur (v9 hepsini yeniliyordu → prevId erteleme zinciri kopuyordu). */
+  fresh.forEach(h=>{ h.updatedAt = Date.now(); delete S.tomb[h.id]; });
   S.hearings = S.hearings.concat(fresh);
   pushUndo({label:'birleştirme', dels:fresh.map(h=>h.id), puts:[]});
   persist(); renderAll();
@@ -2812,39 +3253,187 @@ async function loadFromIDB(){
               Mevcut <b>${S.hearings.length}</b> kaydın yerine yazılacak.`
       });
       if (!ok) return;
-      const before = S.hearings.slice();
-      S.hearings = (snap.v||[]).map(normalize);
-      pushUndo({label:'kalıcı yedek', puts:before, dels:S.hearings.map(h=>h.id)});
-      persist(); renderAll();
+      replaceAll((snap.v||[]).map(normalize).filter(h=>h.date), 'kalıcı yedek');
       toast('✅ Geri yüklendi');
     });
     return null;
   });
 }
 
-// ═══════════════ 9. BİLDİRİM (uygulama açıkken) ═══════════════
-const notified = new Set();
+// ═══════════════ 9. BİLDİRİM ═══════════════
+/* APK: Android AlarmManager ile gerçek bildirim — uygulama kapalı, telefon kilitli
+   ya da yeniden başlatılmış olsa da çalışır (eklenti açılışta alarmları geri kurar).
+   Tarayıcı (PWA): yalnızca uygulama açıkken; Android'de tarayıcıdaki sayfanın
+   kapalıyken bildirim planlamasına izin veren bir web standardı yok.          */
+const NOTIF_MAX  = 60;          // Android uygulama başına ~500 alarm tanır; 60 fazlasıyla yeter
+const NOTIF_DAYS = 45;          // ufuk; her açılışta ve her değişiklikte yeniden kurulur
+const TEST_NID   = 2147000001;  // deneme bildirimi — senkron temizliği dokunmaz
+
+function hearingStart(h){
+  const d=parseD(h.date), [hh,mm]=h.time.split(':').map(Number);
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate(), hh, mm);
+}
+/** Kayıt kimliğinden kararlı, pozitif 31 bit bildirim kimliği. */
+function notifId(h){
+  let x = 0x811c9dc5; const s = 'n:'+h.id;
+  for (let i=0;i<s.length;i++){ x ^= s.charCodeAt(i); x = Math.imul(x, 0x01000193); }
+  return ((x >>> 1) % 2000000000) || 1;
+}
+function channelId(soundId){ return 'durusma_'+soundId; }
+
+/** Planlanacak bildirimler — yan etkisiz, test edilir. */
+function notifPlan(now=Date.now()){
+  const leadMin = +S.settings.notifyLead || 30, lead = leadMin*60000;
+  const horizon = now + NOTIF_DAYS*864e5;
+  const used = new Set();
+  return S.hearings
+    .filter(h=>h.status==='active')
+    .map(h=>({h, start:hearingStart(h).getTime()}))
+    .filter(x=>x.start-lead > now+5000 && x.start <= horizon)
+    .sort((a,b)=>a.start-b.start)
+    .slice(0, NOTIF_MAX)
+    .map(({h,start})=>{
+      let id = notifId(h); while (used.has(id) || id===TEST_NID) id++;
+      used.add(id);
+      return {
+        id, hid:h.id, at:new Date(start-lead),
+        title:`⚖️ ${h.time} · ${h.court || h.file || 'Duruşma'}`,
+        body:`${leadMin} dk sonra duruşma${h.file?' · '+h.file:''} · ${TYPES[h.type].short}`
+      };
+    });
+}
+
+/* Android 8+ sesi bildirime değil KANALA bağlar ve kanalın sesi sonradan değişmez.
+   Bu yüzden her ses ayrı kanal; yalnızca seçili olan tutulur. */
+async function ensureChannel(){
+  const cur = S.settings.notifySound;
+  const s = soundOf(cur);
+  await nat('LocalNotifications','createChannel',{
+    id:channelId(s.id), name:'Duruşma hatırlatması — '+s.label,
+    description:'Duruşmadan önce hatırlatma',
+    importance:4,                 // yüksek: ekranda belirir, ses çalar
+    visibility:0,                 // kilit ekranında içerik, telefonun gizlilik ayarına uyar
+    sound:s.id+'.wav', vibration:true, lights:true, lightColor:'#D4A574'
+  });
+  for (const o of SOUNDS) if (o.id!==s.id)
+    nat('LocalNotifications','deleteChannel',{id:channelId(o.id)}).catch(()=>{});
+}
+function notifPayload(n, exact){
+  const snd = S.settings.notifySound;
+  return {
+    id:n.id, title:n.title, body:n.body,
+    schedule:{at:n.at.toISOString(), allowWhileIdle:true},
+    channelId:channelId(snd), sound:snd+'.wav',
+    smallIcon:'ic_stat_turta', iconColor:'#8B5A2B',
+    autoCancel:true, isExactNotification:exact, extra:{hid:n.hid||null}
+  };
+}
+
+let notifTimer=null, notifBusy=false, notifAgain=false;
+function scheduleNotifSync(){
+  if (!NATIVE) return;
+  clearTimeout(notifTimer); notifTimer = setTimeout(syncNotifications, 1200);
+}
+/** Bekleyen tüm duruşma bildirimlerini silip güncel listeyle yeniden kurar. */
+async function syncNotifications(){
+  if (!NATIVE) return;
+  if (notifBusy){ notifAgain = true; return; }
+  notifBusy = true;
+  const info = {count:0, perm:null, exact:null, err:'', first:null,
+                battery:(S.notifInfo||{}).battery};
+  try {
+    const pend = await nat('LocalNotifications','getPending');
+    const old = (pend.notifications||[]).filter(n=>n.id!==TEST_NID).map(n=>({id:n.id}));
+    if (old.length) await nat('LocalNotifications','cancel',{notifications:old});
+    if (!S.settings.notifications) return;
+    info.perm = (await nat('LocalNotifications','checkPermissions')).display;
+    if (info.perm!=='granted') return;
+    try { info.exact = (await nat('LocalNotifications','checkExactNotificationSetting')).exact_alarm; } catch(e){}
+    await ensureChannel();
+    const plan = notifPlan();
+    // Kesin alarm izni yoksa eklenti her seferinde ayar ekranı açmasın: esnek zamanla kur
+    const exact = info.exact!=='denied';
+    if (plan.length)
+      await nat('LocalNotifications','schedule',{notifications:plan.map(n=>notifPayload(n, exact))});
+    info.count = plan.length;
+    const fh = plan[0] && byId(plan[0].hid);
+    if (fh) info.first = {date:fh.date, time:fh.time};
+  } catch(e){ info.err = errMsg(e); }
+  finally {
+    S.notifInfo = info; notifBusy = false;
+    if (S.page==='settings') renderSettings();
+    if (notifAgain){ notifAgain=false; scheduleNotifSync(); }
+  }
+}
+async function refreshNativeStatus(){
+  if (!NATIVE) return;
+  try {
+    const b = await nat('TurtaNative','batteryStatus');
+    const prev = (S.notifInfo||{}).battery;
+    S.notifInfo = {...(S.notifInfo||{}), battery:!!b.ignoring};
+    if (prev !== !!b.ignoring && S.page==='settings') renderSettings();
+  } catch(e){}
+}
+
+// ── Tarayıcı (PWA): yalnızca uygulama açıkken ──
+let notifiedMap = null;
 function notifyTick(){
-  if (!S.settings.notifications) return;
+  if (NATIVE || !S.settings.notifications) return;
   if (!('Notification' in window) || Notification.permission!=='granted') return;
-  const now = Date.now();
+  if (!notifiedMap) notifiedMap = lsGet(K.notified,{}) || {};
+  const now = Date.now(), lead = (+S.settings.notifyLead||30)*60000;
+  let dirty = false;
   S.hearings.forEach(h=>{
     if (h.status!=='active') return;
-    const d=parseD(h.date), [hh,mm]=h.time.split(':').map(Number);
-    const t = new Date(d.getFullYear(),d.getMonth(),d.getDate(),hh,mm).getTime();
-    const diff = t-now;
-    if (diff>0 && diff<=30*60000 && !notified.has(h.id)) {
-      notified.add(h.id);
-      try {
-        new Notification('⚖️ '+(h.court||'Duruşma'), {
-          body:`${Math.round(diff/60000)} dk sonra${h.file?' · '+h.file:''}`,
-          icon:'icons/icon-192.png', tag:'turta-'+h.id
-        });
-      } catch(e){}
+    const diff = hearingStart(h).getTime()-now;
+    const key = h.id+'@'+h.date+'T'+h.time;     // yeniden açılışta tekrar çalmasın
+    if (diff>0 && diff<=lead && !notifiedMap[key]) {
+      notifiedMap[key] = now; dirty = true;
+      webNotify(`⚖️ ${h.time} · ${h.court||'Duruşma'}`,
+                `${Math.round(diff/60000)} dk sonra${h.file?' · '+h.file:''}`, 'turta-'+h.id);
+      playSound(S.settings.notifySound);
     }
   });
+  if (dirty) {
+    for (const [k,ts] of Object.entries(notifiedMap)) if (now-ts > 3*864e5) delete notifiedMap[k];
+    lsSet(K.notified, notifiedMap);
+  }
 }
+/** Android Chrome'da "new Notification()" hata verir (v9 hatası); service worker üzerinden göster. */
+async function webNotify(title, body, tag){
+  const opt = {body, icon:'icons/icon-192.png', badge:'icons/icon-192.png', tag};
+  try {
+    const reg = ('serviceWorker' in navigator) && await navigator.serviceWorker.getRegistration();
+    if (reg && reg.showNotification) { await reg.showNotification(title, opt); return; }
+  } catch(e){}
+  try { new Notification(title, opt); } catch(e){}
+}
+function playSound(id){
+  try { const a = new Audio('sounds/'+soundOf(id).id+'.wav'); a.play().catch(()=>{}); } catch(e){}
+}
+
 async function toggleNotifications(){
+  if (NATIVE) {
+    if (S.settings.notifications){
+      S.settings.notifications=false; saveSettings();
+      await syncNotifications(); toast('🔕 Duruşma bildirimleri kapatıldı'); return;
+    }
+    let p;
+    try { p = await nat('LocalNotifications','requestPermissions'); }
+    catch(e){ toast('İzin istenemedi: '+errMsg(e), 5000); return; }
+    if (p.display!=='granted'){
+      S.notifInfo = {...(S.notifInfo||{}), perm:p.display};
+      S.settings.notifications=true; saveSettings(); renderSettings();
+      toast('⚠️ Bildirim izni verilmedi — “Android Bildirim Ayarları”ndan açın', 5000);
+      return;
+    }
+    S.settings.notifications=true; saveSettings();
+    await syncNotifications();
+    const I = S.notifInfo||{};
+    toast(I.err ? '⚠️ '+I.err
+      : `🔔 Açık — ${I.count||0} duruşma için ${S.settings.notifyLead} dk önce bildirim`, 4500);
+    return;
+  }
   if (!('Notification' in window)){ toast('Bu cihazda bildirim desteklenmiyor'); return; }
   if (Notification.permission==='denied'){
     toast('Tarayıcı ayarlarından bildirim izni vermeniz gerekiyor', 5000); return;
@@ -2854,9 +3443,229 @@ async function toggleNotifications(){
   if (p==='default') p = await Notification.requestPermission();
   if (p==='granted'){
     S.settings.notifications=true; saveSettings();
-    try{ new Notification('🔔 Hatırlatma açık',{body:'Uygulama açıkken duruşmadan 30 dk önce uyarır.',icon:'icons/icon-192.png'}); }catch(e){}
+    webNotify('🔔 Hatırlatma açık', `Uygulama açıkken duruşmadan ${S.settings.notifyLead} dk önce uyarır.`, 'turta-on');
+    playSound(S.settings.notifySound);
   }
   renderSettings();
+}
+async function testNotification(){
+  const snd = soundOf(S.settings.notifySound), lead = S.settings.notifyLead||30;
+  if (!NATIVE) {
+    playSound(snd.id);
+    if ('Notification' in window && Notification.permission==='granted')
+      webNotify('⚖️ Deneme bildirimi', `${snd.label} sesi`, 'turta-test');
+    else toast(`🔔 ${snd.label} sesi çalındı`);
+    return;
+  }
+  try {
+    const p = await nat('LocalNotifications','requestPermissions');
+    if (p.display!=='granted'){ toast('⚠️ Önce bildirim izni verin', 4000); return; }
+    let exact = true;
+    try { exact = (await nat('LocalNotifications','checkExactNotificationSetting')).exact_alarm!=='denied'; } catch(e){}
+    await ensureChannel();
+    await nat('LocalNotifications','schedule',{notifications:[notifPayload({
+      id:TEST_NID, at:new Date(Date.now()+5000),
+      title:'⚖️ Deneme bildirimi',
+      body:`${snd.emoji} ${snd.label} sesi · duruşmadan ${lead} dk önce böyle gelecek`
+    }, exact)]});
+    toast('🧪 5 sn içinde gelecek — isterseniz uygulamayı kapatıp bekleyin', 4500);
+  } catch(e){ toast('❌ '+errMsg(e), 5000); }
+}
+
+function openSoundPicker(){
+  const row = s => `<div class="snd${S.settings.notifySound===s.id?' on':''}" data-s="${s.id}">
+      <span class="snd-e">${s.emoji}</span><span class="snd-l">${esc(s.label)}</span>
+      <button class="snd-play" data-play="${s.id}" aria-label="${esc(s.label)} sesini dinle">▶</button>
+      <button class="snd-pick" data-pick="${s.id}">${S.settings.notifySound===s.id?'✓ Seçili':'Seç'}</button>
+    </div>`;
+  openSheet(sheetHead('🔔 Bildirim Sesi','▶ ile dinleyin, beğendiğinizi seçin') +
+    `<div class="sheet-body">
+      ${SOUNDS.map(row).join('')}
+      <div class="hint info" style="margin-top:6px">Ses, telefonun bildirim ses düzeyiyle çalar.
+        “Rahatsız Etmeyin” açıksa çalmaz.${NATIVE?' Seçim, planlanmış tüm bildirimlere uygulanır.':''}</div>
+    </div>
+    <div class="sheet-foot"><button class="btn btn-2" data-act="sheet:close">Tamam</button></div>`,
+  sh=>{
+    sh.addEventListener('click', e=>{
+      const pl = e.target.closest('[data-play]');
+      if (pl){ playSound(pl.dataset.play); buzz(); return; }
+      const pk = e.target.closest('[data-pick]') || e.target.closest('.snd');
+      if (!pk) return;
+      const id = pk.dataset.pick || pk.dataset.s;
+      S.settings.notifySound = id; saveSettings(); playSound(id); buzz();
+      sh.querySelectorAll('.snd').forEach(x=>{
+        const on = x.dataset.s===id;
+        x.classList.toggle('on', on);
+        x.querySelector('.snd-pick').textContent = on ? '✓ Seçili' : 'Seç';
+      });
+      scheduleNotifSync();
+      if (S.page==='settings') renderSettings();
+    });
+    return null;
+  });
+}
+function openLeadPicker(){
+  const cur = S.settings.notifyLead||30;
+  openSheet(sheetHead('Ne Kadar Önce','Duruşma saatinden önce bildirim') +
+    `<div class="sheet-body">
+      ${LEAD_OPTIONS.map(m=>`<button class="item" data-m="${m}" style="border-radius:10px;margin-bottom:6px;background:var(--bg)">
+        <div class="item-main"><div class="item-l">${m} dakika önce</div></div>
+        <span class="item-v">${cur===m?'✓':''}</span></button>`).join('')}
+    </div><div class="sheet-foot"><button class="btn btn-2" data-act="sheet:close">Kapat</button></div>`,
+  sh=>{ sh.addEventListener('click', e=>{
+    const b=e.target.closest('[data-m]'); if(!b) return;
+    S.settings.notifyLead=+b.dataset.m; saveSettings(); closeSheet();
+    scheduleNotifSync(); renderSettings();
+    toast(`✅ Bildirim ${S.settings.notifyLead} dk önce gelecek`);
+  }); return null; });
+}
+
+// ═══════════════ 9b. DRIVE SENKRONU (APK) ═══════════════
+/* Kullanıcı Android dosya seçicisiyle Drive'da bir dosya seçer/oluşturur; uygulama o
+   dosyaya kalıcı yazma izni alır. Her değişiklikten ~2,5 sn sonra ve her açılışta:
+   dosyayı oku → kayıt bazında birleştir (en son değişen kazanır, silinenler iz bırakır)
+   → gerekirse geri yaz. Drive uygulaması dosyayı buluta kendisi yükler.          */
+let syncTimer=null, syncBusy=null, syncAgain=false;
+function scheduleDriveSync(){
+  if (!NATIVE || !S.settings.sync || !S.settings.sync.uri) return;
+  clearTimeout(syncTimer); syncTimer = setTimeout(()=>syncNow({quiet:true}), 2500);
+}
+function dataSig(hearings, tomb){
+  return hearings.map(h=>h.id+':'+(+h.updatedAt||0)).sort().join(',') + '|' +
+         Object.keys(tomb||{}).sort().map(k=>k+':'+tomb[k]).join(',');
+}
+/** Kayıt bazında birleştirme — yan etkisiz, test edilir. */
+function mergeSets(local, remote, lt, rt){
+  const tomb = {...(rt||{})};
+  for (const [k,v] of Object.entries(lt||{})) tomb[k] = Math.max(+tomb[k]||0, +v||0);
+  const map = new Map();
+  for (const h of remote) map.set(h.id, h);
+  for (const h of local){
+    const r = map.get(h.id);
+    if (!r || (+h.updatedAt||0) >= (+r.updatedAt||0)) map.set(h.id, h);
+  }
+  const hearings = [...map.values()].filter(h=>!(tomb[h.id] && tomb[h.id] >= (+h.updatedAt||0)));
+  return {hearings, tomb};
+}
+function mergeRemoteSettings(rs){
+  if (!rs) return;
+  const st = S.settings;
+  if (Array.isArray(rs.offDays)) st.offDays = [...new Set([...(st.offDays||[]), ...rs.offDays])].sort();
+  if (rs.fileLinks && typeof rs.fileLinks==='object') st.fileLinks = {...rs.fileLinks, ...(st.fileLinks||{})};
+  saveSettings();
+}
+async function syncNow(opts={}){
+  const sy = S.settings.sync;
+  if (!NATIVE || !sy || !sy.uri) return false;
+  if (syncBusy){ syncAgain = true; return syncBusy; }
+  syncBusy = (async()=>{
+    try {
+      const r = await nat('TurtaNative','syncRead',{uri:sy.uri});
+      const text = String(r.data||'').trim();
+      let remote = null;
+      if (text) {
+        const P = parseBackupFull(text);
+        if (!P) throw new Error('Drive dosyası Turta yedeği değil ya da bozuk — üzerine yazılmadı');
+        remote = {hearings:P.arr, tomb:P.tomb, raw:P.raw};
+      }
+      const localSig = dataSig(S.hearings, S.tomb);
+      const m = remote ? mergeSets(S.hearings, remote.hearings, S.tomb, remote.tomb)
+                       : {hearings:S.hearings, tomb:S.tomb};
+      const mSig = dataSig(m.hearings, m.tomb);
+      if (mSig !== localSig) {
+        S.hearings = m.hearings; S.tomb = m.tomb;
+        if (remote && remote.raw) mergeRemoteSettings(remote.raw.settings);
+        persist({fromSync:true, silent:true}); renderAll();
+        if (!opts.quiet) toast(`☁️ Drive'dan güncellendi — ${S.hearings.length} kayıt`);
+      }
+      if (!remote || dataSig(remote.hearings, remote.tomb) !== mSig)
+        await nat('TurtaNative','syncWrite',{uri:sy.uri, data:backupPayload(false)});
+      sy.lastOk = Date.now(); sy.lastErr = '';
+      if (r.name) sy.name = r.name;
+      saveSettings(); markBackup(true);
+      return true;
+    } catch(e){
+      sy.lastErr = errMsg(e); saveSettings(); renderBanners();
+      return false;
+    } finally {
+      const again = syncAgain; syncAgain = false; syncBusy = null;
+      if (S.page==='settings') renderSettings();
+      if (again) scheduleDriveSync();
+    }
+  })();
+  return syncBusy;
+}
+async function syncCreate(){
+  if (!NATIVE){ toast('Drive senkronu Android uygulamasında'); return; }
+  try {
+    const p = await nat('TurtaNative','syncPickCreate',{name:'turta_senkron.json'});
+    S.settings.sync = {uri:p.uri, name:p.name||'turta_senkron.json',
+                       persisted:p.persisted!==false, lastOk:0, lastErr:''};
+    saveSettings();
+    const ok = await syncNow({quiet:true});
+    toast(ok ? `☁️ Drive senkronu açık — ${S.hearings.length} kayıt yazıldı`
+             : '⚠️ Dosya seçildi ama yazılamadı: '+S.settings.sync.lastErr, 5000);
+    renderAll(); if (S.page==='settings') renderSettings();
+  } catch(e){ if (!isCancel(e)) toast('❌ '+errMsg(e), 5000); }
+}
+async function syncOpen(){
+  if (!NATIVE){ toast('Drive senkronu Android uygulamasında'); return; }
+  let p;
+  try {
+    p = await nat('TurtaNative','syncPickOpen',{});
+    const r = await nat('TurtaNative','syncRead',{uri:p.uri});
+    const text = String(r.data||'').trim();
+    const P = text ? parseBackupFull(text) : null;
+    const release = ()=>nat('TurtaNative','syncRelease',{uri:p.uri}).catch(()=>{});
+    if (text && !P){ release(); toast('❌ Bu dosya bir Turta yedeği değil', 5000); return; }
+    const n = P ? P.arr.length : 0;
+    const ok = await confirmSheet({
+      title:'☁️ Senkron Dosyasını Bağla', ok:'Bağla ve birleştir',
+      body:`<b>${esc(p.name||'dosya')}</b><br><br>
+            Dosyada <b>${n}</b>, bu telefonda <b>${S.hearings.length}</b> kayıt var.
+            İkisi birleştirilir: aynı kaydın en son değiştirilen hâli kalır.
+            Bundan sonra her değişiklik bu dosyaya da yazılır.${skippedNote(P?P.skipped:0)}`
+    });
+    if (!ok){ release(); return; }
+    S.settings.sync = {uri:p.uri, name:p.name, persisted:p.persisted!==false, lastOk:0, lastErr:''};
+    saveSettings();
+    const done = await syncNow({quiet:true});
+    toast(done ? `☁️ Bağlandı — ${S.hearings.length} kayıt` : '⚠️ '+S.settings.sync.lastErr, 5000);
+    renderAll(); if (S.page==='settings') renderSettings();
+  } catch(e){ if (!isCancel(e)) toast('❌ '+errMsg(e), 5000); }
+}
+async function syncUnlink(){
+  const ok = await confirmSheet({title:'Senkronu Kapat', ok:'Bağlantıyı kaldır',
+    body:`Drive'daki dosya <b>silinmez</b>; yalnızca bu telefon artık ona yazmaz.`});
+  if (!ok) return;
+  const uri = S.settings.sync && S.settings.sync.uri;
+  S.settings.sync = null; saveSettings();
+  if (uri) nat('TurtaNative','syncRelease',{uri}).catch(()=>{});
+  renderSettings(); renderBanners(); toast('Senkron kapatıldı');
+}
+
+// ═══════════════ 9c. APK GÜNCELLEME ═══════════════
+/* Yalnızca GitHub'a "son sürüm numarası ne?" sorulur; hiçbir veri gönderilmez. */
+function verGt(a,b){
+  const x=String(a).split('.').map(Number), y=String(b).split('.').map(Number);
+  for (let i=0;i<3;i++) if ((x[i]||0)!==(y[i]||0)) return (x[i]||0)>(y[i]||0);
+  return false;
+}
+async function checkApkUpdate(manual){
+  if (!NATIVE) return;
+  const st = S.settings, today = todayISO();
+  if (st.latestVersion && verGt(st.latestVersion, APP_VERSION)) S.update = {version:st.latestVersion};
+  if (!manual && st.lastUpdateCheck===today) return;
+  try {
+    const res = await fetch(`https://api.github.com/repos/${REPO}/releases/latest`,
+                            {headers:{'Accept':'application/vnd.github+json'}, cache:'no-store'});
+    if (!res.ok) throw new Error('HTTP '+res.status);
+    const v = String((await res.json()).tag_name||'').replace(/^v/,'');
+    st.lastUpdateCheck = today; st.latestVersion = v; saveSettings();
+    S.update = verGt(v, APP_VERSION) ? {version:v} : null;
+    if (manual) toast(S.update ? `📲 Yeni sürüm var: v${v}` : `✅ En güncel sürüm (v${APP_VERSION})`, 4000);
+  } catch(e){ if (manual) toast('Denetlenemedi — internet bağlantısı? ('+errMsg(e)+')', 4500); }
+  renderBanners(); if (S.page==='settings') renderSettings();
 }
 
 // ═══════════════ 10. TOAST ═══════════════
@@ -2884,7 +3693,7 @@ function showPage(p){
   $('#fab').style.display = (p==='agenda'||p==='files') ? 'flex' : 'none';
   if (p==='files')    renderFiles();
   if (p==='stats')    renderStats();
-  if (p==='settings') renderSettings();
+  if (p==='settings') { renderSettings(); refreshNativeStatus(); }
   window.scrollTo({top:0});
 }
 function setSeg(s){
@@ -2892,7 +3701,8 @@ function setSeg(s){
   S.settings.lastSegment=s; saveSettings();
   if (s!=='calendar') S.calSel=null;
   renderSeg(); renderAgenda();
-  window.scrollTo({top:0, behavior:'smooth'});
+  if (s==='all' && !S.q) scrollToToday();
+  else window.scrollTo({top:0, behavior:'smooth'});
 }
 
 // ═══════════════ 12. TEMA ═══════════════
@@ -3003,10 +3813,12 @@ const ACTIONS = {
   'new':      ()=>openForm('new'),
   'new:day':  (el)=>openForm('new',{date:el.dataset.d}),
   'new:file': (el)=>{
-    const f=el.dataset.f;
-    const idx = fileIndex().find(x=>x.file===f);
+    const arr = groupArr(el.dataset.k);
+    const last = arr[arr.length-1];
+    const client = (arr.slice().reverse().find(h=>h.client)||{}).client || '';
     closeSheet();
-    openForm('new', idx?{file:idx.file, court:idx.court, type:idx.type, client:idx.client}:{file:f});
+    openForm('new', last ? {file:el.dataset.k===NOFILE?'':last.file, court:last.court,
+                            type:last.type, client} : {});
   },
   'open':     (el)=>openDetail(el.dataset.id),
   'edit':     (el)=>{ const id=el.dataset.id; closeSheet(); openForm('edit',id); },
@@ -3027,16 +3839,16 @@ const ACTIONS = {
   'ics:one':  (el)=>{ const h=byId(el.dataset.id); if(h) exportICS([h], `durusma_${h.date}.ics`); },
   'ics:all':  ()=>{
     const t=todayISO();
-    exportICS(S.hearings.filter(h=>h.date>=t && h.status!=='decided').sort(sortChrono),
+    exportICS(S.hearings.filter(h=>h.date>=t && h.status==='active').sort(sortChrono),
               `turta_durusmalar_${t}.ics`);
   },
-  'file:open':  (el)=>openFile(el.dataset.f),
+  'file:open':  (el)=>openFile(el.dataset.k),
+  'files:idle': ()=>{ S.showIdleFiles=!S.showIdleFiles; renderFiles(); },
   'share:file': (el)=>{
-    const f=el.dataset.f;
-    const arr=S.hearings.filter(h=>(h.file||'(dosya no yok)')===f).sort(sortChrono);
+    const arr = groupArr(el.dataset.k);
     if(!arr.length) return;
-    const out = `⚖️ Av. Fuat DOBLAN\n📁 ${f}\n🏛️ ${arr[arr.length-1].court}\n\n`
-      + arr.map(h=>`${fmtNum(h.date)} ${h.time} — ${STATUS[h.status].label}${h.note?' ('+h.note+')':''}`).join('\n');
+    const out = `⚖️ Av. Fuat DOBLAN\n📁 ${groupTitle(el.dataset.k, arr)}\n🏛️ ${arr[arr.length-1].court}\n\n`
+      + arr.map(h=>`${fmtNum(h.date)} ${h.time} — ${DSTATUS[effStatus(h)].label}${h.note?' ('+h.note+')':''}`).join('\n');
     shareText('Dosya özeti', out);
   },
   'share:week': ()=>shareRange(todayISO(), addDays(todayISO(),7), 'Önümüzdeki 7 gün'),
@@ -3058,8 +3870,8 @@ const ACTIONS = {
     else toast(`${fmtShort(el.dataset.d)} — duruşma yok`);
   },
   'copy:file': (el)=>{ copyText(el.dataset.f, '📋 Dosya no kopyalandı — UYAP’a yapıştırabilirsiniz'); },
-  'link:open': (el)=>{ window.open(el.dataset.u, '_blank', 'noopener'); },
-  'link:set':  (el)=>openFileLink(el.dataset.f),
+  'link:open': (el)=>openExternal(el.dataset.u),
+  'link:set':  (el)=>openFileLink(el.dataset.k),
   'bulk':      ()=>openBulk(),
   'pin:set':   ()=>openPin(),
   'haptics':   ()=>{ S.settings.haptics=!S.settings.haptics; saveSettings(); buzz(); renderSettings(); },
@@ -3067,6 +3879,26 @@ const ACTIONS = {
   'theme':  (el)=>setTheme(el.dataset.t),
   'undo':   ()=>doUndo(),
   'notif':  ()=>toggleNotifications(),
+  'notif:lead':  ()=>openLeadPicker(),
+  'notif:sound': ()=>openSoundPicker(),
+  'notif:test':  ()=>testNotification(),
+  'notif:exact': async ()=>{
+    try { await nat('LocalNotifications','changeExactNotificationSetting'); } catch(e){}
+    scheduleNotifSync();
+  },
+  'notif:battery':  ()=>{ nat('TurtaNative','openBatterySettings').catch(()=>{}); },
+  'notif:settings': ()=>{ nat('TurtaNative','openNotificationSettings').catch(()=>{}); },
+  'sync:create': ()=>syncCreate(),
+  'sync:open':   ()=>syncOpen(),
+  'sync:now':    async ()=>{
+    toast('☁️ Eşitleniyor…', 1500);
+    const ok = await syncNow();
+    toast(ok ? '✅ Drive ile eşit' : '⚠️ '+((S.settings.sync||{}).lastErr||'Eşitlenemedi'), 4000);
+  },
+  'sync:unlink': ()=>syncUnlink(),
+  'sync:fix':    ()=>showPage('settings'),
+  'app:apk':     ()=>openExternal(APK_URL),
+  'app:checkapk':()=>checkApkUpdate(true),
   'autobackup': ()=>{ S.settings.autoBackup=!S.settings.autoBackup; saveSettings(); renderSettings(); renderBanners(); },
   'backup:json':  ()=>backupJSON(),
   'backup:share': ()=>backupShare(),
@@ -3097,14 +3929,22 @@ const ACTIONS = {
     setTimeout(()=>location.reload(), 500);
   },
   'wipe': async ()=>{
+    const linked = !!(S.settings.sync && S.settings.sync.uri);
     const ok = await confirmSheet({
       title:'Tüm Verileri Sil', danger:true, ok:'Evet, hepsini sil',
       body:`<b>${S.hearings.length}</b> duruşma kaydının tamamı silinecek.<br><br>
-            Bu işlem geri alınamaz. Önce yedek almanız önerilir.`});
+            Bu işlem geri alınamaz. Önce yedek almanız önerilir.${linked
+            ? '<br><br>☁️ Drive senkronu <b>kapatılacak</b>; Drive\'daki dosyaya dokunulmaz (oradaki kopya korunur).' : ''}`});
     if (!ok) return;
-    S.hearings=[]; S.undo=[];
-    lsSet(K.data,[]); lsSet(K.undo,[]);
+    if (linked) {     // silme Drive'a yayılmasın: önce bağlantıyı kopar
+      const uri = S.settings.sync.uri;
+      S.settings.sync = null; saveSettings();
+      nat('TurtaNative','syncRelease',{uri}).catch(()=>{});
+    }
+    S.hearings=[]; S.undo=[]; S.tomb={};
+    lsSet(K.data,[]); lsSet(K.undo,[]); lsSet(K.tomb,{});
     idbPut('kv',{k:'current',v:[],ts:Date.now()}).catch(()=>{});
+    scheduleNotifSync();
     renderAll(); toast('Tüm kayıtlar silindi');
   }
 };
@@ -3293,10 +4133,12 @@ function openBulk(){
 }
 
 /* ── Dosya klasörü bağlantısı (Drive / OneDrive / yerel bulut) ── */
-function openFileLink(file){
+function openFileLink(key){
+  const file = key;              // fileLinks dosya anahtarıyla (esas no + mahkeme) tutulur
+  const arr = groupArr(key);
   const cur = (S.settings.fileLinks||{})[file] || '';
   openSheet(
-    sheetHead('📂 Dosya Klasörü', file) +
+    sheetHead('📂 Dosya Klasörü', arr.length ? groupTitle(key, arr) : '') +
     `<div class="sheet-body">
       <div class="hint info">Bu dosyanın dilekçe, tensip ve rapor klasörünün bağlantısını
         bir kez yapıştırın; sonra tek dokunuşla açılır.</div>
@@ -3471,6 +4313,13 @@ function applyUpdate(){
 }
 function registerSW(){
   if (!('serviceWorker' in navigator)) return;
+  /* APK'da dosyalar zaten pakette; service worker eski sürümü önbellekten sunup
+     APK güncellemesinden sonra bir açılış boyunca eski arayüzü gösterirdi. */
+  if (NATIVE) {
+    navigator.serviceWorker.getRegistrations()
+      .then(rs=>rs.forEach(r=>r.unregister())).catch(()=>{});
+    return;
+  }
   if (location.protocol!=='https:' && location.hostname!=='localhost') return;
   navigator.serviceWorker.register('sw.js').then(reg=>{
     if (reg.waiting){ S.swUpdate=reg; renderBanners(); }
@@ -3492,20 +4341,61 @@ function registerSW(){
 }
 
 // ═══════════════ 16. BAŞLANGIÇ ═══════════════
+/** Ön plana dönüş (tarayıcıda visibilitychange, APK'da ayrıca App 'resume'). */
+let lastResume = 0;
+function onResume(){
+  if (Date.now()-lastResume < 1500) return;      // iki olay art arda gelirse bir kez
+  lastResume = Date.now();
+  renderAll();
+  // 2 dakikadan uzun süre arka planda kaldıysa yeniden kilitle
+  if (S.settings.pin && lockedAt && Date.now()-lockedAt > 120000) showLock();
+  if (NATIVE) { syncNow({quiet:false}); scheduleNotifSync(); refreshNativeStatus(); }
+}
+function onPause(){ lockedAt = Date.now(); }
+
+/** APK'ya özgü bağlantılar: geri tuşu, yaşam döngüsü, bildirime dokunma. */
+function bindNative(){
+  if (!NATIVE) return;
+  document.documentElement.classList.add('native');
+  $('#filepick').removeAttribute('accept');
+  natOn('App','backButton', ()=>{
+    if (!$('#lock').hidden) { nat('App','minimizeApp').catch(()=>{}); return; }
+    if (!$('#sheet-host').hidden) { closeSheet(); return; }
+    if (S.searchOpen) { ACTIONS['search:close'](); return; }
+    if (S.page!=='agenda') { showPage('agenda'); return; }
+    nat('App','minimizeApp').catch(()=>{});
+  });
+  natOn('App','pause',  onPause);
+  natOn('App','resume', onResume);
+  natOn('LocalNotifications','localNotificationActionPerformed', ev=>{
+    const hid = ev && ev.notification && ev.notification.extra && ev.notification.extra.hid;
+    if (hid && byId(hid)) { showPage('agenda'); setTimeout(()=>openDetail(hid), 350); }
+  });
+}
+
 function boot(){
   loadAll();
   applyTheme(S.settings.theme);
+  if (S.settings.theme==='auto') setTheme('auto');     // sistem teması değişimini izle
   const n=new Date(); S.calY=n.getFullYear(); S.calM=n.getMonth();
 
   showPage('agenda');
   renderAll();
+  if (S.seg==='all') scrollToToday();
 
   registerSW();
   requestPersist();
   recoverIfEmpty();
+  bindNative();
 
-  history.pushState(null,'');           // geri tuşu için tampon
+  history.pushState(null,'');           // geri tuşu için tampon (tarayıcı)
   setInterval(notifyTick, 60000); notifyTick();
+
+  if (NATIVE) {
+    syncNotifications();                // planı her açılışta tazele
+    syncNow({quiet:true});
+    setTimeout(()=>checkApkUpdate(false), 4000);
+  }
 
   // Açılış kilidi
   if (S.settings.pin) showLock();
@@ -3517,12 +4407,10 @@ function boot(){
 
   // Gün değişince yeniden çiz (gece yarısını geçen oturumlar)
   let lastDay = todayISO();
-  setInterval(()=>{ const d=todayISO(); if(d!==lastDay){ lastDay=d; renderAll(); } }, 60000);
+  setInterval(()=>{ const d=todayISO(); if(d!==lastDay){ lastDay=d; renderAll(); scheduleNotifSync(); } }, 60000);
   document.addEventListener('visibilitychange', ()=>{
-    if (document.hidden) { lockedAt = Date.now(); return; }
-    renderAll();
-    // 2 dakikadan uzun süre arka planda kaldıysa yeniden kilitle
-    if (S.settings.pin && lockedAt && Date.now()-lockedAt > 120000) showLock();
+    if (document.hidden) { onPause(); return; }
+    onResume();
   });
 
   // Kısayollar: ?a=new / ?a=today
