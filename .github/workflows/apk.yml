@@ -1,0 +1,117 @@
+# Turta — Android APK derleme ve yayın
+#
+# Ne yapar: index.html'i Capacitor kabuğuna paketler, sabit anahtarla imzalar,
+# APK'yı GitHub Releases'a koyar. Telefonda indirme adresi hep aynıdır:
+#   https://github.com/pandafilando5/Turta/releases/latest/download/turta.apk
+#
+# Müvekkil verisi APK'ya GİRMEZ: veri telefonda (ve seçilirse Drive dosyasında) durur.
+name: APK
+
+on:
+  push:
+    branches: [main, 'claude/**']
+    paths:
+      - 'index.html'
+      - 'manifest.webmanifest'
+      - 'icons/**'
+      - 'sounds/**'
+      - 'apk/**'
+      - '.github/workflows/apk.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apk/package-lock.json
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+
+      - name: Sürüm
+        id: v
+        run: |
+          V=$(grep -oP "const APP_VERSION = '\K[0-9.]+" index.html)
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+          echo "Turta v$V"
+
+      - name: Bağımlılıklar
+        working-directory: apk
+        run: npm ci --no-audit --no-fund
+
+      - name: Web dosyaları + Capacitor senkronu
+        working-directory: apk
+        run: |
+          node scripts/prepare-www.mjs
+          npx cap sync android
+
+      - name: APK derle
+        working-directory: apk/android
+        env:
+          TURTA_KEYSTORE: ${{ secrets.TURTA_KEYSTORE_B64 != '' && '/tmp/turta.jks' || '' }}
+          TURTA_KEYSTORE_B64: ${{ secrets.TURTA_KEYSTORE_B64 }}
+          TURTA_KEYSTORE_PASSWORD: ${{ secrets.TURTA_KEYSTORE_PASSWORD }}
+          TURTA_KEY_ALIAS: ${{ secrets.TURTA_KEY_ALIAS }}
+          TURTA_KEY_PASSWORD: ${{ secrets.TURTA_KEY_PASSWORD }}
+        run: |
+          if [ -n "$TURTA_KEYSTORE_B64" ]; then echo "$TURTA_KEYSTORE_B64" | base64 -d > /tmp/turta.jks; fi
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon --stacktrace
+
+      - name: Dosyaları adlandır
+        run: |
+          mkdir -p dist
+          cp apk/android/app/build/outputs/apk/release/app-release.apk "dist/Turta-v${{ steps.v.outputs.version }}.apk"
+          cp apk/android/app/build/outputs/apk/release/app-release.apk dist/turta.apk
+          ls -la dist
+          "$ANDROID_HOME"/build-tools/*/apksigner verify --print-certs dist/turta.apk | head -5 || true
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Turta-v${{ steps.v.outputs.version }}
+          path: dist/turta.apk
+          retention-days: 30
+
+      # Yayın: main dalında, elle tetiklemede ya da commit mesajında [apk] varsa.
+      # Ara denemeler yalnızca "Artifacts" olarak kalır, yanlışlıkla kurulmaz.
+      - name: GitHub Release'e koy
+        if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[apk]')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          V: ${{ steps.v.outputs.version }}
+        run: |
+          TAG="v$V"
+          cat > notes.md <<NOTES
+          **Turta v$V — Android uygulaması**
+
+          **Kurulum:** Telefonda \`turta.apk\` dosyasına dokunun → indirin → açın →
+          "Bu kaynaktan yüklemeye izin ver" → **Yükle**.
+
+          Güncellerken eski sürümü **kaldırmayın**; yenisi üzerine kurulur, veriler korunur.
+
+          Derleme: \`${GITHUB_SHA::7}\` · dal: \`${GITHUB_REF_NAME}\`
+          NOTES
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" dist/turta.apk "dist/Turta-v$V.apk" --clobber
+            gh release edit "$TAG" --notes-file notes.md
+          else
+            gh release create "$TAG" dist/turta.apk "dist/Turta-v$V.apk" \
+              --title "Turta v$V" --notes-file notes.md --target "$GITHUB_SHA" --latest
+          fi

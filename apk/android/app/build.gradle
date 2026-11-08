@@ -1,0 +1,80 @@
+apply plugin: 'com.android.application'
+
+/* Sürüm, kök dizindeki index.html'deki APP_VERSION'dan okunur — tek kaynak.
+   '10.2.3' → versionName "10.2.3", versionCode 100203. */
+def turtaVersion = {
+    def html = rootProject.file('../../index.html')
+    def m = (html.exists() ? html.text : '') =~ /const APP_VERSION = '(\d+)\.(\d+)\.(\d+)'/
+    if (!m.find()) return [name: '0.0.0', code: 1]
+    def (ma, mi, pa) = [m.group(1) as int, m.group(2) as int, m.group(3) as int]
+    return [name: "${ma}.${mi}.${pa}", code: ma * 10000 + mi * 100 + pa]
+}()
+
+android {
+    namespace = "com.doblan.turta"
+    compileSdk = rootProject.ext.compileSdkVersion
+    defaultConfig {
+        applicationId "com.doblan.turta"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode turtaVersion.code
+        versionName turtaVersion.name
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        aaptOptions {
+             // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
+             // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
+            ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+        }
+    }
+
+    /* İmza: güncellemelerin eski sürümün ÜZERİNE kurulabilmesi için anahtar
+       her derlemede aynı olmalı (değişirse Android "uygulama yüklenmedi" der ve
+       kaldırıp kurmak gerekir — veri silinir). Varsayılan anahtar depodadır;
+       ortam değişkenleriyle (GitHub Secrets) başka bir anahtar verilebilir.
+       Ayrıntı: README → "APK imzası". */
+    signingConfigs {
+        release {
+            storeFile file(System.getenv('TURTA_KEYSTORE') ?: 'turta-release.jks')
+            storePassword System.getenv('TURTA_KEYSTORE_PASSWORD') ?: 'turta-imza-anahtari'
+            keyAlias System.getenv('TURTA_KEY_ALIAS') ?: 'turta'
+            keyPassword System.getenv('TURTA_KEY_PASSWORD') ?: 'turta-imza-anahtari'
+        }
+    }
+
+    buildTypes {
+        release {
+            signingConfig signingConfigs.release
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+repositories {
+    flatDir{
+        dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
+    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
+    implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
+    implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
+    implementation project(':capacitor-android')
+    testImplementation "junit:junit:$junitVersion"
+    androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
+    androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
+    implementation project(':capacitor-cordova-android-plugins')
+}
+
+apply from: 'capacitor.build.gradle'
+
+try {
+    def servicesJSON = file('google-services.json')
+    if (servicesJSON.text) {
+        apply plugin: 'com.google.gms.google-services'
+    }
+} catch(Exception e) {
+    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+}

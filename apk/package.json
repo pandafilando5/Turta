@@ -1,0 +1,23 @@
+{
+  "name": "turta-android",
+  "version": "10.0.0",
+  "private": true,
+  "description": "Turta — Android kabuğu (Capacitor). Web uygulaması kök dizindeki index.html'dir.",
+  "type": "module",
+  "scripts": {
+    "www": "node scripts/prepare-www.mjs",
+    "sync": "node scripts/prepare-www.mjs && cap sync android",
+    "apk": "node scripts/prepare-www.mjs && cap sync android && cd android && ./gradlew assembleRelease"
+  },
+  "dependencies": {
+    "@capacitor/android": "8.5.3",
+    "@capacitor/app": "8.1.2",
+    "@capacitor/core": "8.5.3",
+    "@capacitor/filesystem": "8.1.4",
+    "@capacitor/local-notifications": "8.3.1",
+    "@capacitor/share": "8.0.3"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.5.3"
+  }
+}
